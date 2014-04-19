@@ -1,0 +1,1875 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Games</title>
+<link href="CSS/fp.css" rel="stylesheet" type="text/css" />
+
+  <script src="Scripts/utils.js"></script>
+  <script src="Scripts/howler.js"></script>
+  <script src="Scripts/pfx.js"></script>
+  <script src="Scripts/imageLoader.js"></script>
+</head>
+
+<body class="oneColFixCtrHdr">
+
+<div id="container">
+  <div id="header">
+    <!-- end #header -->
+  <img src="images/banner.png" width="780" height="125" alt="Electrical Equipment Corp. Banner" /> </div>
+  <div id="nav"><a href="index.html">Home</a> | <a href="fp.html">Final Project</a>  | <a href="fp2.html">Gallery</a> | <a href="fp3.html">Game 1</a> | <a href="fp4.html">Game 2</a> | Game 3</div>
+  <div id="mainContent"> 
+    <h3 class="flashobj">Space Wars!</h3>
+    <p class="fp3title">
+<div id="display">
+  <canvas id="gameCanvas" width="700" height="700"></canvas>
+
+</div>  
+   
+<script>
+
+// our adorable moving turret
+function Agent() {
+	this.x = 0;
+	this.y = 0;
+	this.orientation = 0;
+	this.rotation = 0;
+	this.alpha = .5;
+	this.scale = 1;
+	
+	this.vx = 0;
+	this.vy = 0;
+		
+	this.maxSpeed = 1;
+	this.maxAcceleration = 1.25;
+	
+	this.radius = 25;
+
+	
+	// arrive radius for beginning to slow down
+	this.targetRadius = 8;
+	this.slowRadius = 64;
+	this.lookAheadScale = 0.1;
+	
+	// used for wander behavior
+	this.wanderRadius = 16;
+	this.wanderOffset = 64;
+	this.wanderRate = 0.5;
+	this.wanderAngle = 0;
+	
+	//Ship draw
+	this.drawShip = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+
+		context.lineWidth = 2;
+		context.strokeStyle = "white";
+		context.beginPath();
+		context.moveTo(-5,-5);
+		context.lineTo(-5,5);
+		context.lineTo(15,5);
+		context.lineTo(5,15);
+		context.lineTo(-5,15);
+		context.lineTo(-15,5);
+		context.lineTo(-15,-5);
+		context.lineTo(-5,-15);
+		context.lineTo(5,-15);
+		context.lineTo(15,-5); 
+		context.closePath();
+		context.stroke();
+
+		context.restore();
+	}
+	//Bullet Draw
+	this.drawBul = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+		
+		context.lineWidth = 1;
+		context.strokeStyle = "yellow";
+		//context.fillStyle = "red";
+		context.beginPath();
+		//context.arc(0, 0, 10, 0, 2*Math.PI);
+		context.moveTo(-5,5);
+		context.lineTo(-5,-5);
+		context.lineTo(5,-5);
+		context.lineTo(5,5);
+		context.lineTo(-5,5);
+		context.lineTo(5,5);
+		context.moveTo(5,-5);
+		context.lineTo(-5,5);
+		//context.lineTo(0,0);
+		//context.closePath();
+		
+		//context.fill();
+		context.stroke();
+		context.restore();
+	}
+	this.drawBomb = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+		
+		context.lineWidth = 1;
+		context.strokeStyle = "lime";
+		//context.fillStyle = "lime";
+		context.beginPath();
+		context.arc(0, 0, this.radius, 0, 2*Math.PI);
+		//context.moveTo(-5,5);
+		//context.lineTo(-5,-5);
+		//context.lineTo(5,-5);
+		//context.lineTo(5,5);
+		//context.lineTo(-5,5);
+		//context.lineTo(5,5);
+		//context.moveTo(5,-5);
+		//ontext.lineTo(-5,5);
+		//context.lineTo(0,0);
+		//context.closePath();
+		
+		//context.fill();
+		context.stroke();
+		context.restore();
+	}	
+	this.drawEnemySmall = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.rotation);
+
+		context.lineWidth = 2;
+		context.strokeStyle = "springgreen";
+		//context.fillStyle = "gray";
+		context.beginPath();
+		context.moveTo(0, 0);
+		context.lineTo(-10,0);
+		context.lineTo(-5,-5);
+		context.lineTo(0,0);
+		context.lineTo(0,-10);
+		context.lineTo(5,-5);
+		context.lineTo(0,0);
+		context.lineTo(10,0);
+		context.lineTo(5,5);
+		context.lineTo(0,0);
+		context.lineTo(0,10);
+		context.lineTo(-5,5);
+		context.lineTo(0,0);
+		//context.fill();
+		context.scale(this.scale,this.scale);
+		context.stroke();
+		
+		
+		
+		context.restore();
+	}
+	this.drawEnemyMedium = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+
+		context.lineWidth = 2;
+		context.strokeStyle = "deeppink";
+		//context.fillStyle = "gray";
+		context.beginPath();
+		context.moveTo(-10, -10);
+		context.lineTo(10, -10);
+		context.lineTo(10, 10);
+		context.lineTo(-10, 10);
+		//context.lineTo(-7, -7);
+		context.closePath();
+		context.moveTo(-10,-10);
+		context.lineTo(10,10);
+		context.moveTo(10, -10);
+		context.lineTo(-10,10);
+		
+		context.scale(this.scale,this.scale);
+		
+		//context.fill();
+		context.stroke();
+
+		context.restore();
+	}
+	this.drawEnemyBig = function() {
+		context.save();
+
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+		
+		context.lineWidth = 2;
+		context.strokeStyle = "darkorange";
+		//context.fillStyle = "gray";
+		context.beginPath();
+		context.moveTo(-10, -10);
+		context.lineTo(10, 0);
+		context.lineTo(-10, 10);
+		context.lineTo(-5, 0);
+		//context.lineTo(-7, -7);
+		context.closePath();
+		context.moveTo(-5,0);
+		context.lineTo(10, 0);
+		
+		//context.fill();
+		context.stroke();
+
+		context.restore();
+	}
+	this.drawEnemyGen = function() {
+		context.save();
+		
+		context.translate(this.x, this.y);
+		context.rotate(this.orientation);
+		
+		//context.globalAlpha = this.alpha;		
+		
+		context.lineWidth = 2;
+		context.strokeStyle = "blue";
+		context.fillStyle = "rgba(0, 0, 200, 0.25)";//"white";
+		
+		context.beginPath();
+		
+		//context.arc(0,0,nme.radius - 20,0,Math.PI*2,true);
+		
+		context.arc(0,0,this.radius - 20,0,Math.PI*2,true);
+		
+		context.fill();
+		context.moveTo(0,15);
+		//context.fillStyle = "yellow";//"white";
+		//context.arc(0,0,enemyGenRadius2,0,Math.PI*2,true);
+		context.lineTo(15, 0);
+		context.lineTo(0,-15);
+		context.lineTo(-15,0);
+		context.closePath();
+		context.fill();	
+		
+		//context.scale(1,1);
+		
+		context.stroke();
+		context.restore();
+	}	
+	this.drawPart = function() {
+		context.fillStyle = this.color;
+		context.fillRect(this.x, this.y, this.radius, this.radius);
+	}	
+}
+
+function Thing(xPos, yPos, xVel, yVel, size, color) {
+	this.xPos = xPos;
+	this.yPos = yPos;
+	this.xVel = xVel;
+	this.yVel = yVel;
+	this.size = size;
+	this.color = color;
+	this.bounces = 0;
+	
+	this.updatePhysics = function() {
+		this.xPos += this.xVel;
+		this.yPos += this.yVel;
+	}
+	this.draw = function() {
+		context.fillStyle = this.color;
+		context.fillRect(this.xPos, this.yPos, this.size, this.size);
+	}
+}
+// accumlates influences of all steering behaviors.
+function SteeringForce() {
+	this.linearX = 0;
+	this.linearY = 0;
+}
+var stopped = false;
+var stopping = true;
+// update agent's orientation and position based on steering forces
+// and current velocity.
+Agent.prototype.update = function(steeringForce, name) {
+
+	if (name == "big") {
+		
+		targetX = canvas.width + 20;
+		//this.vx = (this.x + targetX ) * easing,
+		
+		//this.vx += easeIQr(.65);
+		
+		//this.vx += easeOQn(.03);
+		
+		//this.vy = 0;//(steeringForce.linearY - this.y) * easing;
+		
+		//this.vx += easeOQn(.03);
+		this.vx += ease2(.02, 0, 800, 100);
+		//window.setTimeout(function() { ship.canFire = true; }, bulletFireDelayMs);
+		this.x += this.vx;
+		
+		
+		//console.log(this.vx);
+		//ease(0, 0, 800, 100);
+		
+		//console.log(this.vx);
+		if (this.x >= canvas.width - this.radius) {
+				this.vx = 0;
+				enemiesBig.splice(this,1);
+				wallSfx.play();
+				canSpawnEnemiesBig = false;
+				window.setTimeout(function() { canSpawnEnemiesBig = true; }, enemiesBigDelayMs);
+		}
+	} else {	
+		this.x += this.vx;
+		this.y += this.vy;
+		this.vx += steeringForce.linearX;
+		this.vy += steeringForce.linearY;
+		
+		var speed = utils.getMagnitude(this.vx, this.vy);
+		
+		if (speed > 0 && speed > this.maxSpeed) {
+			this.vx = (this.vx / speed) * this.maxSpeed;
+			this.vy = (this.vy / speed) * this.maxSpeed;
+		}
+		
+		//orient to current velocity
+
+		
+		if (name == "small") {
+			this.rotation += .21;
+		} else {
+			this.orientation = Math.atan2(this.vy, this.vx);
+		}
+		
+		if (this.x >= canvas.width - this.radius) {
+			this.x = canvas.width - this.radius;
+		} else if (this.x <= this.radius) {
+			this.x = this.radius;
+		} if (this.y >= canvas.height - this.radius) {
+			this.y = canvas.height - this.radius;
+		} else if (this.y <= this.radius) {
+			this.y = this.radius;
+		}
+	}
+	//this.vx = (steeringForce.linearX - this.x) * easing,
+	//this.vy = (steeringForce.linearY - this.y) * easing;
+	
+
+}
+
+Agent.prototype.update2 = function() {
+	this.x += this.vx;
+	this.y += this.vy;
+	
+	//this.vx += steeringForce.linearX;
+	//this.vy += steeringForce.linearY;
+		
+	//var speed = utils.getMagnitude(this.vx, this.vy);
+	
+	/*if (speed > 0 && speed > this.maxSpeed) {
+		this.vx = (this.vx / speed) * this.maxSpeed;
+		this.vy = (this.vy / speed) * this.maxSpeed;
+	}*/
+	
+	//orient to current velocity
+	var dx = mouse.x - this.x;
+	var dy = mouse.y - this.y;
+	
+	this.orientation = Math.atan2(dy, dx);
+
+	//screen wrapping
+	if (this.x >= canvas.width - this.radius) {
+		this.x = canvas.width - this.radius;
+	} else if (this.x <= this.radius) {
+		this.x = this.radius;
+	} if (this.y >= canvas.height - this.radius) {
+		this.y = canvas.height - this.radius;
+	} else if (this.y <= this.radius) {
+		this.y = this.radius;
+	}
+	//Intersecting
+	for (var enemy = enemiesSmall.length - 1; enemy >= 0; --enemy) {
+		if (enemiesSmall[enemy].scale >= 1) {	
+			if (utils.areColliding(ship.x, ship.y, ship.radius, enemiesSmall[enemy].x, enemiesSmall[enemy].y, enemiesSmall[enemy].radius)) {
+				//console.log("Ship Hit! " + ship.health);
+				if (numLives > 0) {
+					var id = "enemySmall";
+					createExplosion(enemiesSmall[enemy], id);
+					enemiesSmall[enemy].splice;
+					numLives -=1;
+					ship.x = canvas.width/2;
+					ship.y = canvas.height/2;
+					enemiesSmall = [];
+					enemiesMedium = [];
+					enemiesBig = [];
+					//enemiesGen = [];
+					//particles = [];
+					//bullets = [];
+					bombs = [];
+					//canSpawnEnemiesBig = true;
+					window.setTimeout(function() { canSpawnEnemiesBig = true; }, enemiesBigDelayMs/2);
+					deathSfx.play();
+					break;
+					//gameStart = false;
+					//gameStart2 = 0;
+				} else {
+					ship.health -= 10;
+					deathSfx.play();
+				}
+				
+				
+				//bullets.splice(i,1);
+				//bullRots.splice(i,1);
+			}
+		}
+	}
+	//Intersecting Medium
+	for (var enemy = enemiesMedium.length - 1; enemy >= 0; --enemy) {
+		if (enemiesMedium[enemy].scale >= 1) {	
+			if (utils.areColliding(ship.x, ship.y, ship.radius, enemiesMedium[enemy].x, enemiesMedium[enemy].y, enemiesMedium[enemy].radius)) {
+				//console.log("Ship Hit! " + ship.health);
+				if (numLives > 0) {
+					var id = "enemyMedium";
+					createExplosion(enemiesMedium[enemy], id);
+					enemiesMedium[enemy].splice;
+					numLives -=1;
+					ship.x = canvas.width/2;
+					ship.y = canvas.height/2;
+					enemiesSmall = [];
+					enemiesMedium = [];
+					enemiesBig = [];
+					//enemiesGen = [];
+					//particles = [];
+					//bullets = [];
+					bombs = [];
+					//canSpawnEnemiesBig = true;
+					window.setTimeout(function() { canSpawnEnemiesBig = true; }, enemiesBigDelayMs/2);
+					deathSfx.play();
+					break;
+					//gameStart = false;
+					//gameStart2 = 0;
+				} else {
+					ship.health -= 10;
+					deathSfx.play();
+				}
+				
+				//bullets.splice(i,1);
+				//bullRots.splice(i,1);
+			}
+		}
+	}
+	//Intersecting Big
+	for (var enemy = enemiesBig.length - 1; enemy >= 0; --enemy) {
+		if (utils.areColliding(ship.x, ship.y, ship.radius, enemiesBig[enemy].x, enemiesBig[enemy].y, enemiesBig[enemy].radius)) {
+			//console.log("Ship Hit! " + ship.health);
+			if (numLives > 0) {
+				var id = "enemyBig";
+				createExplosion(enemiesBig[enemy], id);
+				enemiesBig[enemy].splice;
+				numLives -=1;
+				ship.x = canvas.width/2;
+				ship.y = canvas.height/2;
+				enemiesSmall = [];
+				enemiesMedium = [];
+				enemiesBig = [];
+				//enemiesGen = [];
+				//particles = [];
+				//bullets = [];
+				bombs = [];
+				//canSpawnEnemiesBig = true;
+				window.setTimeout(function() { canSpawnEnemiesBig = true; }, enemiesBigDelayMs/2);
+				deathSfx.play();
+				break;
+				//gameStart = false;
+				//gameStart2 = 0;		
+			} else {
+				ship.health -= 10;
+				deathSfx.play();
+			}
+			
+			//bullets.splice(i,1);
+			//bullRots.splice(i,1);
+		}
+	}		
+	if (ship.health <= 0) {
+		ship.isAlive = false;
+		gameState = 2;
+	}
+
+}
+// used to draw target circle
+function drawCircle(x, y, radius) {
+	context.save();
+	context.strokeStyle = "red";
+	context.beginPath();
+	context.arc(x, y, radius, 0, 2 * Math.PI);
+	context.stroke();
+	context.restore();
+}
+
+//Background Grid | Source: http://stackoverflow.com/questions/11735856/draw-grid-table-on-canvas-html5
+
+var bw = 800;
+var bh = 800;
+var p = 0;
+var cw = bw + (p*2) + 1;
+var ch = bh + (p*2) + 1;
+
+function drawBoard(){
+	for (var x = 0; x <= bw; x += 40) {
+		context.moveTo(0.5 + x + p, p);
+		context.lineTo(0.5 + x + p, bh + p);
+	}
+	for (var x = 0; x <= bh; x += 40) {
+		context.moveTo(p, 0.5 + x + p);
+		context.lineTo(bw + p, 0.5 + x + p);
+	}
+	context.strokeStyle = "rgba(255, 255, 255, 0.25)";
+	context.stroke();
+}
+//PARTICLES
+function createExplosion(enemyD, id) {
+	
+	var centerX = enemyD.x; //+ death.radius / 2;
+	var centerY = enemyD.y; //+ death.radius / 2;
+	
+	name = id;
+	//console.log(name);
+	
+	for (var i = 0; i < numParticlesPerEnemy; ++i) {
+	
+		var randomAngle = Math.random() * 2 * Math.PI;
+		
+		var speed = Math.random() * (maxParticleSpeed - minParticleSpeed) + minParticleSpeed;
+	
+		var velocityX = Math.cos(randomAngle) * speed;
+		var velocityY = Math.sin(randomAngle) * speed;
+				
+		if (name == "enemySmall") {
+			var particle = new Thing(centerX, centerY, velocityX, velocityY, utils.getRandomFloat(1, 6), "lime");
+		} else if (name == "enemyMedium") {
+			var particle = new Thing(centerX, centerY, velocityX, velocityY, utils.getRandomFloat(1, 6), "deeppink");
+		} else if (name == "enemyBig") {
+			var particle = new Thing(centerX, centerY, velocityX, velocityY, utils.getRandomFloat(1, 6), "darkorange");
+		} else if (name == "enemyGen") {
+			var particle = new Thing(centerX, centerY, velocityX, velocityY, utils.getRandomFloat(1, 6), "lightblue");
+		} else {
+			var particle = new Thing(centerX, centerY, velocityX, velocityY, utils.getRandomFloat(1, 6), "darkorange");
+		}
+		particles.push(particle);
+	}
+}
+
+function updateParticles() {
+	for (var i = particles.length - 1; i >= 0; --i) {
+		particles[i].updatePhysics();
+		
+		// add some acceleration from gravity each frame.
+		//particles[i].yVel += 0.5;
+	
+		// remove particles that are no longer on screen.
+		var shouldRemoveParticle = false;
+		
+		
+		
+		if (particles[i].xPos <= -particles[i].size) {
+			if (particles[i].bounces >0) {
+				shouldRemoveParticle = true;
+			} else {
+				particles[i].xVel = -particles[i].xVel;
+				particles[i].bounces += 1;
+			}
+			//console.log(particles[i].bounces);
+			//console.log("Hello!");
+			//shouldRemoveParticle = true;
+		} else if (particles[i].xPos > canvas.width) {
+			if (particles[i].bounces >0) {
+				shouldRemoveParticle = true;
+			} else {
+				particles[i].xVel = -particles[i].xVel;
+				particles[i].bounces += 1;
+			}			
+			//shouldRemoveParticle = true;
+		} else if (particles[i].yPos <= -particles[i].size) {
+			if (particles[i].bounces >0) {
+				shouldRemoveParticle = true;
+			} else {
+				particles[i].yVel = -particles[i].yVel;
+				particles[i].bounces += 1;
+			}			
+			//shouldRemoveParticle = true;
+		} else if (particles[i].yPos > canvas.height) {
+			if (particles[i].bounces >0) {
+				shouldRemoveParticle = true;
+			} else {
+				particles[i].yVel = -particles[i].yVel;
+				particles[i].bounces += 1;
+			}			
+			//shouldRemoveParticle = true;
+		}
+		
+		if (shouldRemoveParticle) {
+			particles.splice(i, 1);
+		}	
+	}
+}
+
+function drawParticles() {
+	for (var i = 0; i < particles.length; ++i) {
+		particles[i].draw();
+	}
+}
+function attachBulletPfx(objct) {
+	emitter = new Emitter();
+	
+	emitter.name = "bulletTrails";		
+	emitter.x = objct.x; //+ bullet.radius * 0.5;
+	emitter.y = objct.y; //+ bullet.radius * 0.5;
+	emitter.particleImage = imageLoader.images.circle;
+	emitter.spawnRate = 200;
+	emitter.compositeMode = "lighter";
+	
+	emitter.angle = [Math.PI  * 0.40, Math.PI  * 0.40];//[bullet.orientation*.40,bullet.orientation*.60];
+	emitter.speed = [200, 250];	
+	emitter.lifespan = [0.25, 0.5];
+	emitter.alpha = [0.2, 0.4];
+	emitter.alphaDelta = [-0.5, -0.2];
+	emitter.scale = [0.15, 0.25];
+	
+	emitter.gravityX = 0;
+	emitter.gravityY =0; //0.01;
+	
+	objct.emitter = emitter;
+}
+//Bullet Function
+function updateBullets() {
+	bullRot = ship.orientation;
+	
+	if (ship.isFiring && ship.canFire) {
+		var bullet = new Agent();
+		bullet.x = ship.x;
+		bullet.y = ship.y;//-5;
+		bullet.radius = 2;
+		bullets.push(bullet);
+		bullRots.push(bullRot);
+		shootSfx.play();
+		ship.canFire = false;
+		attachBulletPfx(bullet);
+		window.setTimeout(function() { ship.canFire = true; }, bulletFireDelayMs);
+		//ship.canFire = false;
+		//setTimeout(function(){ship.canFire = true},500);
+	}
+	
+	for (var i = bullets.length - 1; i >= 0; --i) {
+		for (var i = bullRots.length - 1; i >= 0; --i) {	
+			var blt = bullets[i];
+			var bltRot = bullRots[i];
+			//bullRot = agent.orientation;
+			//bullRots.push(bullRot);	
+			
+			blt.x += Math.cos(bltRot)*bullSpeed;
+			blt.y += Math.sin(bltRot)*bullSpeed;
+			//this.rotation = ship.orientation;
+			
+			blt.orientation += .51;
+			//bullets[i].orientation = ship.orientation;//utils.getMagnitude(ship.vx, ship.vy);
+			
+			//Bullets Emmiter
+			/*if (bullets[i].emitter != undefined && bullets[i].emitter != null) {
+				bullets[i].emitter.x = bullets[i].x + bullets[i].radius * 0.5;
+				bullets[i].emitter.y = bullets[i].y + bullets[i].radius * 0.5;
+				bullets[i].emitter.update(16.0 / 1000.0);
+			}*/
+			
+			//screen wrapping
+			if (blt.x >= canvas.width - blt.radius || blt.x <= blt.radius || blt.y >= canvas.height - blt.radius || blt.y <= blt.radius) {
+				bullets.splice(i,1);
+				bullRots.splice(i,1);
+				wallSfx.play();
+			}
+			
+			//Bullet Hit Small
+			for (var enemy = enemiesSmall.length - 1; enemy >= 0; --enemy) {
+				if (!bullets[i]){
+				} else if (utils.areColliding(bullets[i].x, bullets[i].y, bullets[i].radius, enemiesSmall[enemy].x, enemiesSmall[enemy].y, enemiesSmall[enemy].radius)) {
+					//console.log("Hit!");
+					bullets.splice(i,1);
+					bullRots.splice(i,1);
+					var id = "enemySmall";
+					createExplosion(enemiesSmall[enemy], id);
+					enemiesSmall.splice(enemy, 1);
+					smallHitSfx.play();
+
+					score += 10;
+				}
+			}
+			//Bullet Hit Medium
+			for (var enemy = enemiesMedium.length - 1; enemy >= 0; --enemy) {
+				if (!bullets[i]){
+				} else if (utils.areColliding(bullets[i].x, bullets[i].y, bullets[i].radius, enemiesMedium[enemy].x, enemiesMedium[enemy].y, enemiesMedium[enemy].radius)) {
+					//console.log("Hit!");
+					bullets.splice(i,1);
+					bullRots.splice(i,1);
+					var id = "enemyMedium";
+					createExplosion(enemiesMedium[enemy], id);
+					enemiesMedium.splice(enemy, 1);
+					bigHitSfx.play();
+
+					score += 5;
+				}
+			}
+			//Bullet Hit Big
+			for (var enemy = enemiesBig.length - 1; enemy >= 0; --enemy) {
+				if (!bullets[i]){
+				} else if (utils.areColliding(bullets[i].x, bullets[i].y, bullets[i].radius, enemiesBig[enemy].x, enemiesBig[enemy].y, enemiesBig[enemy].radius)) {
+					//console.log("Hit!");
+					bullets.splice(i,1);
+					bullRots.splice(i,1);
+					var id = "enemyBig";
+					createExplosion(enemiesBig[enemy], id);
+					enemiesBig.splice(enemy, 1);
+					bigHitSfx.play();
+					score += 20;					
+					canSpawnEnemiesBig = false;
+					window.setTimeout(function() { canSpawnEnemiesBig = true; }, enemiesBigDelayMs);
+				}
+			}			
+			//Bullet Hit Gen
+			for (var enemy = enemiesGen.length - 1; enemy >= 0; --enemy) {
+				if (!bullets[i]){
+				} else if (utils.areColliding(bullets[i].x, bullets[i].y, bullets[i].radius, enemiesGen[enemy].x, enemiesGen[enemy].y, enemiesGen[enemy].radius)) {
+					//console.log("Hit!");
+					bullets.splice(i,1);
+					bullRots.splice(i,1);
+					var id = "enemyGen";
+					createExplosion(enemiesGen[enemy], id);
+					if (enemiesGen[enemy].health <= 0) {
+						enemiesGen.splice(enemy, 1);
+						genKills +=1;
+						if (genKills >= 4) {
+							difficulty +=1;
+							numAgentsSmall = difficulty * .5;
+							genKills = 0;
+							if (enemiesSmall.length <= numAgentsSmall + 4) { 
+								canSpawnEnemiesSmall = true;
+							}	else {
+								canSpawnEnemiesSmall = false;
+							}
+						}
+					} else { //Health > 0 
+						enemiesGen[enemy].health -=1;
+						//console.log("Hit Enemy Gen 0");
+						if (enemiesGen[enemy].radius > 0) {
+							enemiesGen[enemy].radius -= 5;
+							enemiesGen[enemy].drawEnemyGen();
+							//console.log(enemiesGen[enemy]);
+						} else {
+							enemiesGen[enemy].radius = 0;
+						}
+						
+						/*if (enemiesGen[enemy].radius > 0) {
+							enemiesGen[enemy].radius -= 5;
+							//console.log(enemiesGen[enemy]);
+						} else {
+							enemiesGen[enemy].radius = 0;
+						}*/
+					}
+					bigHitSfx.play();
+
+					score += 15;
+				}
+			}			
+		}
+	}
+}
+
+function drawBullets() {
+	for (var i = 0; i < bullets.length; ++i) {
+		bullets[i].drawBul();
+		if (bullets[i].emitter != undefined && bullets[i].emitter != null) {
+			//bullets[i].emitter.draw();
+		}
+	}
+}
+//BOMB Function
+var hit = 0;
+function updateBomb() {
+	if (numBombs <= 0) {
+		numBombs = 0;
+		ship.canFireBomb = false;
+	}
+	if (ship.isFiringBomb && ship.canFireBomb) {
+		var bomb = new Agent();
+		bomb.x = ship.x;
+		bomb.y = ship.y;//-5;
+		bomb.radius = 5;
+		bombs.push(bomb);
+		shootSfx.play();
+		ship.canFireBomb = false;
+		//attachBulletPfx(bullet);
+		numBombs -= 1;
+		if (numBombs<0) {
+			numBombs = 0;
+		}
+		window.setTimeout(function() { ship.canFireBomb = true}, bombFireDelayMs+2000);
+		window.setTimeout(function() { bombs = [];}, bombFireDelayMs + 1000);
+		//ship.canFire = false;
+		//setTimeout(function(){ship.canFire = true},500);
+	}
+
+	for (var i = 0; i < bombs.length; ++i) {
+		for (var enemy = enemiesSmall.length - 1; enemy >= 0; --enemy) {
+			if (utils.areColliding(bombs[i].x, bombs[i].y, bombs[i].radius, enemiesSmall[enemy].x, enemiesSmall[enemy].y, enemiesSmall[enemy].radius)) {
+				//console.log("Hit Bomb!");
+				
+				enemiesSmall.splice(enemy, 1);
+				if (hit == 0) {
+					bigHitSfx.play();
+					hit = 1;
+					window.setTimeout(function() { hit = 0;}, 200);
+				} 
+				
+				score += 5;
+				//bombs.splice(bombs[i],1);
+			}
+		}
+	}
+	
+	
+	/*for (var i = bombs.length - 1; i >= 0; --i) {
+		
+		var bmb = bombs[i];
+		//console.log(bmb.radius);
+		
+		//Bullet Hit
+		for (var enemy = enemiesSmall.length - 1; enemy >= 0; --enemy) {
+			if (utils.areColliding(bmb.x, bmb.y, bmb.radius, enemiesSmall[enemy].x, enemiesSmall[enemy].y, enemiesSmall[enemy].radius)) {
+				//console.log("Bomb Hit!");
+				bombs.splice(bmb,1);
+				enemiesSmall.splice(enemy, 1);
+				bigHitSfx.play();
+				//createExplosion(enemiesSmall[enemy]);
+				score += 5;
+			}
+		}
+	}*/
+}
+
+function drawBomb() {
+	for (var i = 0; i < bombs.length; ++i) {
+		bombs[i].drawBomb();
+		bombs[i].radius += 5;
+	}
+}
+//Enemies Small
+function updateEnemySmall() {
+	var small = "small";
+	if (enemiesSmall.length <= numAgentsSmall + 4) { 
+		canSpawnEnemiesSmall = true;
+	}	else {
+		canSpawnEnemiesSmall = false;
+	}
+	if (canSpawnEnemiesSmall) {
+		//while (enemiesSmall.length <= numAgentsSmall) {	
+			for (var i = 0; i < numAgentsSmall; ++i) {
+					//LEFT ENEMIES
+					if (enemiesGen.length >0) {		
+						var enemySmall = new Agent();
+						enemySmall.radius = 15;	
+						enemySmall.maxSpeed = utils.getRandomFloat(.75, 2);
+						enemySmall.maxAcceleration = utils.getRandomFloat(.75, 1.25);					
+						enemySmall.x = enemiesGen[0].x+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50, -enemySmall.radius);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+						enemySmall.y = enemiesGen[0].y+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50, canvas.height +50);//utils.getRandomFloat(-20, canvas.height + 20);//canvas.height / 2;
+						//enemySmall.maxSpeed = 1;
+						//enemySmall.maxAcceleration = 0.01;
+						enemySmall.scale = .1;
+						enemiesSmall.push(enemySmall)
+					}
+					//TOP
+					if (enemiesGen.length >1) {
+						var enemySmall = new Agent();
+						enemySmall.radius = 15;
+						enemySmall.maxSpeed = utils.getRandomFloat(.75, 2);
+						enemySmall.maxAcceleration = utils.getRandomFloat(.75, 1.25);							
+						enemySmall.x = enemiesGen[1].x+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50,canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+						enemySmall.y = enemiesGen[1].y+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50, -enemySmall.radius);//utils.getRandomFloat(-20, canvas.height + 20);//canvas.height / 2;
+						//enemySmall.maxSpeed = 1;
+						//enemySmall.maxAcceleration = 0.01;
+						enemySmall.scale = .1;
+						enemiesSmall.push(enemySmall)
+					}
+					//RIGHT
+					if (enemiesGen.length >2) {
+						var enemySmall = new Agent();
+						enemySmall.radius = 15;
+						enemySmall.maxSpeed = utils.getRandomFloat(.75, 2);
+						enemySmall.maxAcceleration = utils.getRandomFloat(.75, 1.25);							
+						enemySmall.x = enemiesGen[2].x + utils.getRandomFloat(-20, 20);//utils.getRandomFloat(canvas.width +enemySmall.radius, canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+						enemySmall.y = enemiesGen[2].y + utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50, canvas.height +50);
+						enemySmall.scale = .1;
+						enemiesSmall.push(enemySmall)
+					}
+					//BOTTOM
+					if (enemiesGen.length >3) {
+						var enemySmall = new Agent();
+						enemySmall.radius = 15;
+						enemySmall.maxSpeed = utils.getRandomFloat(.75, 2);
+						enemySmall.maxAcceleration = utils.getRandomFloat(.75, 1.25);							
+						enemySmall.x = enemiesGen[3].x+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(-50,canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+						enemySmall.y = enemiesGen[3].y+ utils.getRandomFloat(-20, 20);//utils.getRandomFloat(canvas.height + enemySmall.radius, canvas.height +50);
+						enemySmall.scale = .1;
+						enemiesSmall.push(enemySmall)
+					}
+			}
+		//}
+	}
+	//Steering Behavior Small
+	for (var i = 0; i < enemiesSmall.length; ++i) {
+		var agent = enemiesSmall[i];
+	
+		//wander(agent, steeringForce);
+		pursue(agent, ship.x, ship.y, ship.maxSpeed, ship.vx, ship.vy);
+		agent.update(steeringForce, small);
+	}
+}
+
+function drawEnemySmall() {
+	for (var i = 0; i < enemiesSmall.length; ++i) {
+		enemiesSmall[i].drawEnemySmall();
+		
+		if (enemiesSmall[i].scale < 1) {
+			enemiesSmall[i].scale +=.05;
+		}
+	}
+}
+//ENEMY MEDIUM
+function updateEnemyMedium() {
+	var medium = "medium";
+	while (enemiesMedium.length <= numAgentsMedium) {	
+		for (var i = 0; i < numAgentsMedium; ++i) {
+				//LEFT ENEMIES
+				var enemyMedium = new Agent();
+				enemyMedium.radius = 15;				
+				enemyMedium.x = utils.getRandomFloat(-50, -enemyMedium.radius);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+				enemyMedium.y = utils.getRandomFloat(-50, canvas.height +50);//utils.getRandomFloat(-20, canvas.height + 20);//canvas.height / 2;
+				enemyMedium.scale = .1;
+				//enemySmall.maxSpeed = 1;
+				//enemySmall.maxAcceleration = 0.01;
+				enemiesMedium.push(enemyMedium)
+				
+				//TOP
+				var enemyMedium = new Agent();
+				enemyMedium.radius = 15;
+				enemyMedium.x = utils.getRandomFloat(-50,canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+				enemyMedium.y = utils.getRandomFloat(-50, -enemyMedium.radius);//utils.getRandomFloat(-20, canvas.height + 20);//canvas.height / 2;
+				enemyMedium.scale = .1;
+				//enemySmall.maxSpeed = 1;
+				//enemySmall.maxAcceleration = 0.01;
+				enemiesMedium.push(enemyMedium)
+				
+				//RIGHT
+				var enemyMedium = new Agent();
+				enemyMedium.radius = 15;
+				enemyMedium.x = utils.getRandomFloat(canvas.width +enemyMedium.radius, canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+				enemyMedium.y = utils.getRandomFloat(-50, canvas.height +50);
+				enemyMedium.scale = .1;
+				enemiesMedium.push(enemyMedium)
+				
+				//BOTTOM
+				var enemyMedium = new Agent();
+				enemyMedium.radius = 15;
+				enemyMedium.x = utils.getRandomFloat(-50,canvas.width + 50);//utils.getRandomFloat(-20, canvas.width + 20);//canvas.width / 2;
+				enemyMedium.y = utils.getRandomFloat(canvas.height + enemyMedium.radius, canvas.height +50);
+				enemyMedium.scale = .1;
+				enemiesMedium.push(enemyMedium)				
+		}
+	}
+	//Steering Behavior Medium
+	for (var i = 0; i < enemiesMedium.length; ++i) {
+		var agent = enemiesMedium[i];
+
+		wander(agent, steeringForce);
+		//pursue(agent, ship.x, ship.y, ship.maxSpeed, ship.vx, ship.vy);
+		
+		agent.update(steeringForce, medium);
+	}
+}
+function drawEnemyMedium() {
+	for (var i = 0; i < enemiesMedium.length; ++i) {
+		enemiesMedium[i].drawEnemyMedium();
+		if (enemiesMedium[i].scale < 1) {
+			enemiesMedium[i].scale +=.005;
+		}
+	}
+}
+//ENEMY BIG
+function updateEnemyBig() {
+	//canSpawnEnemiesBig = false;
+	var big = "big";
+	if (canSpawnEnemiesBig || gameStart == 0) {
+		while (enemiesBig.length < numAgentsBig) {	
+			for (var i = 0; i < numAgentsBig; ++i) {
+				//LEFT ENEMIES
+				var enemyBig = new Agent();
+				enemyBig.radius = 10;				
+				enemyBig.x = 0;
+				enemyBig.y = ship.y;
+				enemiesBig.push(enemyBig)
+				bigEnemySfx.play();
+				
+				if (difficulty >=3) {
+					var enemyBig = new Agent();
+					enemyBig.radius = 10;				
+					enemyBig.x = 0;
+					enemyBig.y = ship.y + utils.getRandomFloat(40, canvas.height-40);
+					enemiesBig.push(enemyBig)
+					bigEnemySfx.play();
+					canSpawnEnemiesBig = false;
+				}
+				if (difficulty >=6) {
+					var enemyBig = new Agent();
+					enemyBig.radius = 10;				
+					enemyBig.x = 0;
+					enemyBig.y = ship.y + utils.getRandomFloat(40, canvas.height-40);
+					enemiesBig.push(enemyBig)
+					bigEnemySfx.play();
+					canSpawnEnemiesBig = false;
+				}
+				
+				canSpawnEnemiesBig = false;
+			}
+		}
+	}
+	
+	if (canSpawnEnemiesBig) {
+		while (enemiesBig.length < numAgentsBig) {	
+			for (var i = 0; i < numAgentsBig; ++i) {
+				//LEFT ENEMIES
+				var enemyBig = new Agent();
+				enemyBig.radius = 10;		
+				enemyBig.x = 0;
+				enemyBig.y = ship.y;
+				enemiesBig.push(enemyBig)
+				bigEnemySfx.play();
+				canSpawnEnemiesBig = false;				
+			}
+		}
+	}
+	//Steering Behavior Big
+	for (var i = 0; i < enemiesBig.length; ++i) {
+		var agent = enemiesBig[i];
+		agent.update(steeringForce, big);
+	}
+}
+
+function drawEnemyBig() {
+	for (var i = 0; i < enemiesBig.length; ++i) {
+		enemiesBig[i].drawEnemyBig();
+	}
+}
+//ENEMY GENERATOR
+function updateEnemyGen() {
+	var generator = "generator";
+	if (canSpawnEnemiesGen) {
+		while (enemiesGen <= numAgentsGen) {	
+			for (var i = 0; i < numAgentsGen; ++i) {
+					//Top LEFT ENEMIES
+					var enemyGen1 = new Agent();
+					enemyGen1.radius = 50;				
+					enemyGen1.x = utils.getRandomFloat(100, 250);
+					enemyGen1.y = utils.getRandomFloat(100, 250);
+					enemyGen1.health = 5;
+					//enemySmall.maxSpeed = 1;
+					//enemySmall.maxAcceleration = 0.01;
+					enemiesGen.push(enemyGen1)
+					
+					//TOP Right
+					var enemyGen2 = new Agent();
+					enemyGen2.radius = 50;
+					enemyGen2.x = utils.getRandomFloat(canvas.width -250, canvas.width - 100);
+					enemyGen2.y = utils.getRandomFloat(100,250);
+					enemyGen2.health = 5;
+					//enemySmall.maxSpeed = 1;
+					//enemySmall.maxAcceleration = 0.01;
+					enemiesGen.push(enemyGen2)
+					
+					//Bottom left
+					var enemyGen3 = new Agent();
+					enemyGen3.radius = 50;
+					enemyGen3.x = utils.getRandomFloat(100, 250);
+					enemyGen3.y = utils.getRandomFloat(canvas.height-250, canvas.height-100);
+					enemyGen3.health = 5;
+					enemiesGen.push(enemyGen3)
+					
+					//Bottom Right
+					var enemyGen4 = new Agent();
+					enemyGen4.radius = 50;
+					enemyGen4.x = utils.getRandomFloat(canvas.width -250, canvas.width - 100);
+					enemyGen4.y = utils.getRandomFloat(canvas.height-250, canvas.height-100);
+					enemyGen4.health = 5;
+					enemiesGen.push(enemyGen4)		
+			}
+		}
+	}
+}
+
+function drawEnemyGen() {
+	for (var enemy = enemiesGen.length - 1; enemy >= 0; --enemy) {
+		enemiesGen[enemy].drawEnemyGen();
+	}
+}
+				
+//Steering Behaviors
+//Ease in Quintic
+function ease1(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(tc*ts);
+}
+//Easing In Quart
+function easeIQr(t) {
+	return t*t*t*t;
+}
+//Easing Out Quint
+function easeOQn(t) {
+	return 1+(--t)*t*t*t*t
+}
+function ease2(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(1.5*tc*ts + -2*ts*ts + 3*tc + -2*ts + 0.5*t);
+}
+//move toward target position at max acceleration
+function seek(agent, targetX, targetY, steeringForce) {
+	var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = utils.getMagnitude(x, y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+}
+
+// move away from target position at max acceleration
+function flee(agent, targetX, targetY, steeringForce) {
+	var x = agent.x - targetX;
+	var y = agent.y - targetY;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+}
+
+// move toward target future position
+function pursue(agent, targetX, targetY, targetMaxS, targetVX, targetVY) {
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * agent.lookAheadScale;
+	
+	var targetNewX = targetVX * t + targetX;
+	var targetNewY = targetVY * t + targetY;
+	
+	return arrive(agent, targetNewX, targetNewY, steeringForce);
+}
+
+// evade away from future target position
+function evade(agent, targetX, targetY, targetMaxS, targetVX, targetVY) {
+	/*var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+	*/
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	var t = dist / targetMaxS;
+	
+	var targetNewX = targetVX * t + targetX;
+	var targetNewY = targetVY * t + targetY;
+	
+	return flee(agent, targetNewX, targetNewY, steeringForce);
+}
+
+// arrive at target position
+function arrive(agent, targetX, targetY, steeringForce) {
+	
+	// get direction from agent to target
+	var directionX = targetX - agent.x;
+	var directionY = targetY - agent.y;
+	
+	// normalize direction
+	var distance = utils.getMagnitude(directionX, directionY);
+	directionX = directionX / distance; 
+	directionY = directionY / distance; 
+			
+	var targetSpeed = 0;
+
+	// slow down if within the slow radius.
+	if (distance < agent.targetRadius) {
+		targetSpeed = 0;
+		agent.vx = 0;
+		agent.vy = 0;
+	} else if (distance > agent.slowRadius) {
+		targetSpeed = agent.maxSpeed;
+	} else {
+		targetSpeed = agent.maxSpeed * distance / agent.slowRadius;
+	}
+	
+	var targetVelocityX = directionX * targetSpeed;
+	var targetVelocityY = directionY * targetSpeed;
+	
+	// steer toward desired velocity
+	steeringForce.linearX = (targetVelocityX - agent.vx);
+	steeringForce.linearY = (targetVelocityY - agent.vy);
+	
+	// clamp acceleration if it exceeds agent's max acceleration
+	var acceleration = utils.getMagnitude(steeringForce.linearX, steeringForce.linearY);
+	
+	if (acceleration > agent.maxAcceleration) {
+		// normalize...
+		steeringForce.linearX /= acceleration;
+		steeringForce.linearY /= acceleration;
+		
+		// scale to max acceleration...
+		steeringForce.linearX *= agent.maxAcceleration;
+		steeringForce.linearY *= agent.maxAcceleration;
+	}
+}
+function wander(agent, steeringForce) {
+	// perturb wander angle by a small random amount.
+	var deltaWander = Math.random() * agent.wanderRate;
+	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
+			
+	// move target to wanderOffset in front of agent
+	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
+	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
+	
+	// draw the wander circle, etc. if drawDebug is enabled.
+	if (drawDebug == true) {
+		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
+		drawCircle(targetX, targetY, 8);
+		context.moveTo(agent.x, agent.y);
+		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
+		context.lineTo(targetX, targetY);
+		context.stroke();
+	}
+	
+	// seek toward the target point
+	return seek(agent, targetX, targetY, steeringForce);
+}
+//HUD STUFF
+function drawStartHud() {
+	context.save();
+	  
+	
+	context.rotate(this.orientation);
+	
+	context.translate(this.x, this.y);
+	
+	context.lineWidth = 2;
+	context.strokeStyle = "red";
+	context.beginPath();
+	
+	context.moveTo(140,50);
+	context.lineTo(80,100);
+	context.lineTo(150,150);
+	context.lineTo(125,200);
+	context.lineTo(80,160);
+	context.lineTo(60,215);
+	context.lineTo(140,230);
+	context.lineTo(190,150);
+	context.lineTo(130,100);
+	context.lineTo(140,90);
+	context.lineTo(175,90);
+	context.lineTo(140,50);
+	
+	context.moveTo(210,65);
+	context.lineTo(210,230);
+	context.lineTo(230,150);
+	context.lineTo(290,130);
+	context.lineTo(210,65);
+	
+	context.moveTo(220,100);
+	context.lineTo(220,140);
+	context.lineTo(260,130);
+	context.lineTo(220,100);
+	
+	context.moveTo(290,230);
+	context.lineTo(340,65);
+	context.lineTo(390,230);
+	context.lineTo(340,200);
+	context.lineTo(290,230);
+	
+	context.moveTo(320,190);
+	context.lineTo(340,175);
+	context.lineTo(360,190);
+	context.lineTo(340,130);
+	context.lineTo(320,190);
+	
+	context.moveTo(410,130);
+	context.lineTo(450,65);
+	context.lineTo(480,65);
+	context.lineTo(500,100);
+	context.lineTo(465,80);
+	context.lineTo(430,130);
+	context.lineTo(430,180);
+	context.lineTo(465,210);
+	context.lineTo(500,198);
+	context.lineTo(465,240);
+	context.lineTo(410,190);
+	context.lineTo(410,130);
+	
+	context.moveTo(535,65);
+	context.lineTo(535,230);
+	context.lineTo(590,195);
+	context.lineTo(560,175);
+	context.lineTo(590,155);
+	context.lineTo(560,135);
+	context.lineTo(590,115);
+	context.lineTo(535,65);
+	//context.moveTo(canvas.width/2,canvas.height/2);
+	//context.lineTo(canvas.width/2,canvas.height/2);
+	//context.lineTo(canvas.width/2,canvas.height/2);
+	//context.lineTo(canvas.width/2,canvas.height/2);
+	
+	//context.closePath();
+	//context.fill();
+	context.stroke();
+	
+	//context.translate(this.x - 800, this.y);
+	
+	context.restore();
+}
+
+/*function startButton() {
+	starts = [];	
+	if (starts.length == 0) {
+		var start = new Agent();
+		start.x = canvas.width/2-80;
+		start.y = canvas.height/2-25;
+		starts.push(1);
+	}
+}*/
+
+function drawHud() {
+context.fillStyle = "#FFFFFF";
+	detectViewportChange();
+	
+	if (gameState == 0) {
+		context.font = "30px Arial";
+		var text = "Wars!";
+		var controls = "Controls: WASD moves, Mouse aims, Left Mouse Button shoots, Spacebar detonates Chaser Bomb";
+		var controls2 = "Press the M key to mute the music";
+		var textSize = context.measureText(text);
+		var textSize2 = context.measureText(controls);
+		var textSize3 = context.measureText(controls2);
+		var textSize4 = context.measureText("Press Spacebar to Start");
+		
+		context.fillText(text, canvas.width / 2 + 200, canvas.height / 3 + 50);
+		context.fillText("Press Spacebar to Start", canvas.width / 2 - textSize4.width / 2, canvas.height / 2 + 40);
+		context.font = "15px Arial";
+		context.fillText(controls, canvas.width / 2 - textSize2.width/4, canvas.height / 2 +100 );
+		context.fillText(controls2, canvas.width / 2 - textSize3.width/4, canvas.height / 2 +120 );
+		context.fillText("Chasers", canvas.width / 6 + 45, canvas.height / 2 + 290);
+		context.fillText("+ 10pts", canvas.width / 6 + 45, canvas.height / 2 + 310);
+		context.fillText("Drones", canvas.width / 3 + 50, canvas.height / 2 + 290);
+		context.fillText("+ 5pts", canvas.width / 3 + 50, canvas.height / 2 + 310);
+		context.fillText("Generators", canvas.width / 2 + 40, canvas.height / 2 + 290);
+		context.fillText("+ 15pts", canvas.width / 2 + 45, canvas.height / 2 + 310);
+		context.fillText("Predators", canvas.width / 1.5 + 42, canvas.height / 2 + 290);
+		context.fillText("+ 20pts", canvas.width / 1.5 + 42, canvas.height / 2 + 310);
+		context.font = "10px Arial";
+		var textSize4 = context.measureText("A game by Anthony DeGrazia © 2014 | KillerAJD@gmail.com");
+		context.fillText("A game by Anthony DeGrazia  © 2014 | KillerAJD@gmail.com", canvas.width / 2 - textSize4.width / 2, canvas.height -10);
+		hudEnemySmall.x = canvas.width / 6 + 75;
+		hudEnemySmall.y = canvas.height / 1.25;
+		hudEnemySmall.drawEnemySmall();
+		hudEnemyMedium.drawEnemyMedium();
+		hudEnemyBig.drawEnemyBig();
+		hudEnemyGen.drawEnemyGen();
+		drawStartHud();
+		//context.fillText("Your Final Score: " + points, canvas.width / 2 - textSize.width / 2 + 30, (canvas.height / 2) + 40);
+	} else if (gameState == 1) {
+
+		context.font = "16px Lucida Console";
+		//context.fillText("Landmark!", canvas.width/2 -40,canvas.height/2 - 50);
+		//HEALTH:
+		//context.fillText("Health: ", 15,16);	
+		context.fillText("Lives: " + numLives, 15,16);		
+		context.fillText("Bombs: " + numBombs, 130,16);		
+		//startButton();
+		//SCORE 
+		context.fillText("SCORE: ", canvas.width/2 - 20,16);	
+		context.fillText(score, canvas.width/2 - 20,32);	
+		//context.fillText(user, canvas.width/2 - 15,canvas.height - 40);
+		//DIFFICULTY
+		context.fillText("LEVEL: " + difficulty, canvas.width - 100,16);
+	} else {
+		context.font = "30px Arial";
+		var text = "YOU WERE DEFEATED!";
+		var text2 = "Your Final Score: ";
+		var text3 = "Press Spacebar to Restart";
+		var text4 = "Highscores:";
+		var text5 = "You Reached Level ";
+		var textSize = context.measureText(text);
+		var textSize2 = context.measureText(text2 + score);
+		var textSize3 = context.measureText(text3);
+		var textSize5 = context.measureText(text5);
+		//var finScore = score;
+		hudEnemySmall.x = canvas.width / 6 + 40;
+		hudEnemySmall.y = canvas.height / 4 - 10;
+		hudEnemySmall.rotation += .15;
+		hudEnemySmall.drawEnemySmall();
+		hudEnemySmall2.x = canvas.width / 1.5 + 80;
+		hudEnemySmall2.y = canvas.height / 4 - 10;
+		hudEnemySmall2.rotation += .15;
+		hudEnemySmall2.drawEnemySmall();
+		context.fillText(text, canvas.width / 2 - textSize.width / 2, canvas.height / 4);
+		context.fillText(text2 + score, canvas.width / 2 - textSize2.width / 2, (canvas.height / 3));
+		context.fillText(text3, canvas.width / 2 - textSize3.width / 2, (canvas.height / 2) + 40);
+		context.fillText(text5+ difficulty, canvas.width / 2 - textSize5.width / 2, (canvas.height / 3) + 50);
+		context.font = "15px Arial";
+		var textSize4 = context.measureText(text4);
+		context.fillText(text4, canvas.width / 2 - textSize4.width / 2, (canvas.height / 2) + 140);
+		
+	}
+}
+
+// global variables
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+var mouse = utils.captureMouse(canvas);
+var easing = .01;
+
+var oldWidth = document.body.clientWidth;
+var oldHeight = document.body.clientHeight;
+
+function detectViewportChange(){
+	
+	var currentHeight = document.body.clientHeight;
+    var currentWidth = document.body.clientWidth; 
+	
+	if(currentWidth != oldWidth || currentHeight != oldHeight){
+		oldWidth = currentWidth;
+		oldHeight = currentHeight;
+		
+		canvas = document.getElementById("gameCanvas");
+		context = canvas.getContext("2d");
+		mouse = utils.captureMouse(canvas);
+	}
+}
+
+var ship = new Agent();
+ship.x = canvas.width / 2;
+ship.y = canvas.height / 2;
+ship.maxSpeed = 2;
+ship.maxAcceleration = 1;
+ship.health = 10;
+ship.isAlive = true;
+ship.canFire = true;
+ship.canFireBomb = true;
+ship.isFiringBomb = false;
+ship.radius = 15;
+
+var difficulty = 1;
+var genKills = 0;
+var score = 0;
+
+//HUD Enemies
+var hudEnemySmall = new Agent();
+hudEnemySmall.x = canvas.width / 6 + 75;
+hudEnemySmall.y = canvas.height / 1.25;
+var hudEnemySmall2 = new Agent();
+hudEnemySmall2.x = canvas.width / 6 + 75;
+hudEnemySmall2.y = canvas.height / 1.25;
+var hudEnemyMedium = new Agent();
+hudEnemyMedium.x = canvas.width / 3 + 75;
+hudEnemyMedium.y = canvas.height / 1.25;
+var hudEnemyBig = new Agent();
+hudEnemyBig.x = canvas.width / 1.5 + 75;
+hudEnemyBig.y = canvas.height / 1.25;
+var hudEnemyGen = new Agent();
+hudEnemyGen.x = canvas.width / 2 + 75;
+hudEnemyGen.y = canvas.height / 1.25;
+hudEnemyGen.radius = 50;
+/*var agent = new Agent();
+//Bottom Center
+//agent.x = canvas.width / 2;
+//agent.y = canvas.height - 100;
+agent.x = canvas.width / 2;
+agent.y = canvas.height / 2;
+agent.maxSpeed = 1;
+agent.maxAcceleration = 0.10;
+//agent.radius = 25;
+*/
+//BULLETS
+var bullets = [];
+var bullRot = 0;
+var bullRots = [];
+var bullSpeed = 6;
+var bulletFireDelayMs = 200;
+
+//BOMBS
+var bombs = [];
+var bombFireDelayMs = 500;
+
+//ENEMIES
+	//SMALL
+var enemiesSmall = [];
+var enemiesMedium = [];
+var enemiesBig = [];
+var enemiesGen = [];
+var numAgentsSmall = difficulty * .5;
+var numAgentsMedium = 4;
+var numAgentsBig = 1;
+var numAgentsGen = 1;
+
+var genHealth1 = 5;
+var genHealth2 = 5;
+var genHealth3 = 5;
+var genHealth4 = 5;
+
+var enemyGenRadius = 15;
+var enemyGenRadius2 = 5;
+
+var canSpawnEnemiesSmall = false;
+var canSpawnEnemiesMedium = false;
+var canSpawnEnemiesBig = false;
+var canSpawnEnemiesGen = false;
+
+var enemiesSmallDelayMs = 500;
+var enemiesMediumDelayMs = 500;
+var enemiesBigDelayMs = 15000;
+var enemiesGenDelayMs = 500;
+
+//PARTICLES
+var particles = [];
+var particleSize = utils.getRandomFloat(1, 6);
+var minParticleSpeed = 4;
+var maxParticleSpeed = 12;
+var numParticlesPerEnemy = 8;
+
+//Steering Force
+var steeringForce = new SteeringForce();
+var drawDebug = false;
+
+
+// position of last mouse click. The location that
+// the agent will seek to or flee from.
+var targetX = ship.x;
+var targetY = ship.y;
+
+//Target Mouse
+var targetX2 = mouse.x;//waypoints[points].x;
+var targetY2 = mouse.y;//waypoints[points].y;
+
+// Mouse & Keyboard Events
+function onMouseDown(e) {
+	ship.isFiring = true;
+}
+function onMouseUp(e) {
+	ship.isFiring = false;
+}
+
+function onKeyDown (event) {
+	switch (event.keyCode) {
+		case 16://SHIFT
+			//ship.maxSpeed = 5;
+			break;
+		case 87://W - UP - arrow = 38
+			ship.vy = -ship.maxSpeed;
+			break;
+		case 68://D - RIGHT - arrow = 39
+			ship.vx = ship.maxSpeed;
+			break;
+		case 83://S - DOWN - arrow = 40
+			ship.vy = ship.maxSpeed;
+			break;
+		case 65://A - LEFT - arrow = 37
+			ship.vx = -ship.maxSpeed;
+			break; 
+		case 80://P
+		  //state = 1;
+		  break;
+		case 69://E
+		  //state = 2;
+		  break;
+		case 77://F
+		  if (music) {
+			gameMusic.stop();
+			music = false;
+		  } else if (music == false) {
+			music2 = false;
+			music = true;
+			gameMusic.play();
+		  }
+		  break;
+		case 38://Up Arrow
+
+		  break; 
+		case 40://Down Arrow
+			
+		  break; 
+		case 32://SPACEBAR
+			if (gameState == 0) {
+				gameState = 1;
+				score = 0;
+				difficulty = 1;
+			} else if (gameState == 1) {
+				ship.isFiringBomb = true;
+				//updateBomb();
+			} else if(gameState == 2) {
+				gameState = 0;
+			}
+		  break; 
+		  
+		default:
+	}
+}
+
+function onKeyUp (event) {
+	switch (event.keyCode) {
+		case 87://W - UP - 38
+			ship.vy = 00;
+			break;
+		case 68://D - RIGHT - 39
+			ship.vx = 0;
+			break;
+		case 83://S - DOWN - 40
+			ship.vy = 0;
+			break;
+		case 65://A - LEFT - 37
+			ship.vx = 0;
+			break; 
+		case 38://Up Arrow
+		  
+		  break; 
+		case 40://Down Arrow
+			
+		  break; 
+		case 32://SPACEBAR
+			if (gameState == 1) {
+				//ship.isFiringBomb = true;
+				ship.isFiringBomb = false;
+			}
+		  break;
+		case 16://SHIFT
+			//ship.maxSpeed = 3;
+			break;		
+		default:
+	}
+}
+
+function setCookie(cname,cvalue,exdays) {
+	var d = new Date();
+	d.setTime(d.getTime()+(exdays*24*60*60*1000));
+	var expires = "expires="+d.toGMTString();
+	document.cookie = cname + "=" + cvalue + "; " + expires;
+
+}
+function getCookie(cname) {
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0; i<ca.length; i++) {
+	  var c = ca[i].trim();
+	  if (c.indexOf(name)==0) return c.substring(name.length,c.length); 
+	}
+	return "";
+}
+function checkCookie() {
+	var username=getCookie("username");
+	
+	if (username!="") {
+	  alert("Welcome again " + username);
+	} else {
+		username = prompt("Please enter your name:","User");
+		if (username!="" && username!=null) {
+			setCookie("username",username,365);
+			user = username;
+		}
+	}
+}
+
+var scores = [];
+var users = [];
+
+var user1 = "AJD";
+var user2 = "AJD";
+var user3 = "AJD";
+var user4 = "AJD";
+var user5 = "AJD";
+
+var finScore1 = 0;
+var finScore2 = 0;
+var finScore3 = 0;
+var finScore4 = 0;
+var finScore5 = 0;
+var godMode = false;
+
+var numLives = 3;
+var numBombs = 3;
+
+function getHighScores() {
+	var username = prompt("Please enter your initials","AJD");
+		if (username!="" && username!=null) {
+			user = username;
+		} else {
+			getHighScores();
+		}
+}
+
+//Game States
+var gameState = 0;
+var state = 1;
+var gameStart = false;
+var gameStart2 = 0;
+
+//Sound FX
+var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.mp3"], volume: 0.1});
+var bigShotSfx = new Howl({urls: ["audio/big_shot.wav", "audio/big_shot.mp3"], volume: 0.1});
+var smallShotSfx = new Howl({urls: ["audio/small_shot.wav", "audio/small_shot.mp3"], volume: 0.1});
+var bigHitSfx = new Howl({urls: ["audio/big_hit.wav", "audio/big_hit.mp3"], volume: 0.1});
+var smallHitSfx = new Howl({urls: ["audio/small_hit.wav", "audio/small_hit.mp3"], volume: 0.1});
+var bombSfx = new Howl({urls: ["audio/bomb.wav", "audio/bomb.mp3"], volume: 0.1});
+var bigEnemySfx = new Howl({urls: ["audio/enemy.wav", "audio/enemy.mp3"], volume: 0.1});
+var wallSfx = new Howl({urls: ["audio/wall.wav", "audio/wall.mp3"], volume: 0.1});
+var deathSfx = new Howl({urls: ["audio/death.wav", "audio/death.mp3"], volume: 0.1});
+
+//Source GameMusic(orig. space2b.wav): credit to Ville Nousiainen, http://soundcloud.com/mutkanto, http://freesound.org/people/Xythe/sounds/100875/
+var gameMusic = new Howl({urls: ["audio/gameMusic.wav", "audio/gameMusic.mp3"],  volume: 0.1, buffer:true, loop: true});
+
+var music = true;
+var music2 = true;
+
+//image Loader
+imageLoader.queueImage("circle");
+imageLoader.loadQueuedImages(initGame);
+
+// game loop
+function initGame() {
+	/*<body onload="checkCookie()"></body>*/
+	
+	// global events
+	//canvas.addEventListener("click", onClick, false);
+	window.addEventListener("keydown", onKeyDown, false);
+	window.addEventListener("keyup", onKeyUp, false);
+	window.addEventListener("mousedown", onMouseDown, false);
+	window.addEventListener("mouseup", onMouseUp, false);
+	gameCanvas.oncontextmenu = function() {
+	   //alert('right click');   
+	   //onRightClick();
+	   return false;
+	}	
+	if (music2 == true) {
+		gameMusic.play();
+	}
+
+	(function tick() {
+
+		window.requestAnimationFrame(tick, canvas);
+		
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		//drawCircle(mouse.x, mouse.y, 12);
+		
+		if (gameState == 0) {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			drawBoard();
+			drawHud();	
+		} else if (gameState == 1) {
+		
+			if (godMode) {
+				ship.health = 50000;
+			}
+			
+			canSpawnEnemiesSmall = true;
+			canSpawnEnemiesGen = true;
+			
+			drawBoard();
+			
+			ship.update2();
+			ship.drawShip();
+			
+			updateBullets();
+			drawBullets();
+			
+			drawBomb();
+			updateBomb();
+			
+			updateEnemyGen();
+			drawEnemyGen();
+			
+			updateEnemySmall();
+			drawEnemySmall();
+			
+			window.setTimeout(function() { canSpawnEnemiesMedium = true; }, enemiesMediumDelayMs);
+			
+			updateEnemyMedium();
+			drawEnemyMedium();
+			
+			updateEnemyBig();
+			drawEnemyBig();				
+			
+			updateParticles();
+			drawParticles();
+			
+			drawHud();
+			
+			gameStart = true;
+			
+			if (gameStart2 == 0) {	
+				gameStart2 = 1;
+			}
+		} else if (gameState == 2) {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			drawBoard();
+			drawHud();
+			
+			//getHighScores();
+			
+			ship.x = canvas.width / 2;
+			ship.y = 100;
+			ship.health = 10;
+			enemiesSmall = [];
+			enemiesMedium = [];
+			enemiesBig = [];
+			enemiesGen = [];
+			bullets = [];
+			bullRots = [];
+			bombs = [];
+			ship.canFire = true;
+			ship.canFireBomb = true;
+			canSpawnEnemiesBig = false;
+			gameStart = false;
+			gameStart2 = 0;
+			
+			genKills = 0;
+			numLives = 3;
+			numBombs = 3;
+			numAgentsSmall = difficulty * .5;
+		}
+	})();
+}
+</script>
+
+</div>
+  <div id="footer">
+    <p>Anthony DeGrazia ©  2009 | Contact me at KillerAJD@gmail.com</p>
+  <!-- end #footer --></div>
+<!-- end #container --></div>
+
+</body>
+</html>

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>Hobo Survival</title>
+<style>
+	body { 
+		background-color:#000;
+	}
+	canvas {
+		background-color:#FFF;
+	}
+</style>
+</head><body><center>
+<canvas id="gameCanvas" width="1280" height="800"></canvas>
+</center>
+<script src="./Hobo Survival_files/utils.js"></script>
+<script src="./Hobo Survival_files/box2d.js"></script>
+<script>
+var REFMULTI = 2; //1= 120hz 2 =60hz
+
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+var mouse = utils.captureMouse(canvas);
+
+//box2d stuff
+var SCALE = 30;
+var SCALE2 = 15;
+
+var world;
+var b2Vec2 = Box2D.Common.Math.b2Vec2;
+var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+var b2Body = Box2D.Dynamics.b2Body;
+var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+var b2Fixture = Box2D.Dynamics.b2Fixture;
+var b2World = Box2D.Dynamics.b2World;
+var b2MassData = Box2D.Collision.Shapes.b2MassData;
+var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+var b2AABB = Box2D.Collision.b2AABB;
+var b2WorldManifold = Box2D.Collision.b2WorldManifold;
+var b2ManifoldPoint = Box2D.Collision.b2ManifoldPoint;
+var b2RayCastInput = Box2D.Collision.b2RayCastInput;
+var b2RayCastOutput = Box2D.Collision.b2RayCastOutput;
+var b2Listener = Box2D.Dynamics.b2ContactListener;
+
+world = new b2World(new b2Vec2(0,0), true);
+
+var Player = new Hobo(895,1664);
+var myWallet = new Wallet();
+var theDealer = new Dealer(0,0);
+var Agents = [];
+var Pickups = [];
+var Buildings = [];
+var Roads = [];
+var Intersections = [];
+var chars = [];
+
+window.addEventListener("keydown", function(e) {
+	if(chars.indexOf(e.keyCode) == -1) {
+		chars.push(e.keyCode);
+		console.log(chars.toString());
+	}
+}, false);
+window.addEventListener("keyup", function(e) {
+	var index = chars.indexOf(e.keyCode);
+	chars.splice(index, 1);
+}, false);
+
+function init(){
+
+	//x,y,height,width,type (1=b 2=s 3=i)
+	Buildings.push(new mapObject(0,0,768,9984,1), new mapObject(0,768,5120,768,1), new mapObject(0,5888,768,9216,1 ), 
+	new mapObject(9216,768,5888,768,1 ), new mapObject(768,768,768,1280,1), new mapObject(768,4096,768,1280,1), new mapObject(2304,768,768,2048,1 ), new mapObject(4608,768,768,2048,1),
+	new mapObject(6912,768,768,1024,1), new mapObject(8192,768,1024,1024,1), new mapObject(1024,1792,768,1024,1), new mapObject(2304,1792,1536,2048,1),
+	new mapObject(4608,1792,1280,2048,1), new mapObject(6912,1792,1280,2304,1), new mapObject(1024,2816,1024,1024,1),new mapObject(2304,3584,1280,2048,1),
+	new mapObject(4608,3328,2560,768,1), new mapObject(5632,3328,2560,1024,1), new mapObject(6912,3328,1280,2048,1), new mapObject(768,5120,768,1280,1),
+	new mapObject(2304,5120,768,2048,1), new mapObject(6912,4864,1024,2048,1));
+	Roads.push(new mapObject(1024,1536,256,1024,2), new mapObject(2048,768,768,256,2), new mapObject(2304,1536,256,2048,2), new mapObject(4352,768,768,256,2),
+	new mapObject(4608,1536,256,2048,2), new mapObject(6656,768,768,256,2), new mapObject(6912,1536,256,1280,2), new mapObject(7936,768,768,256,2),
+	new mapObject(768,1792,768,256,2), new mapObject(1024,2560,256,1024,2), new mapObject(2048,1792,1536,256,2), new mapObject(4352,1792,1536,256,2),
+	new mapObject(6656,1792,1280,256,2), new mapObject(768,2816,1024,256,2), new mapObject(1024,3840,256,1024,2), new mapObject(2048,3328,512,256,2),
+	new mapObject(2304,3328,256,2048,2), new mapObject(4608,3072,256,768,2), new mapObject(5632,3072,256,1024,2), new mapObject(6912,3072,256,2048,2),
+	new mapObject(2048,4096,768,256,2), new mapObject(4352,3584,1280,256,2), new mapObject(5376,3328,2560,256,2), new mapObject(6656,3328,1280,256,2),
+	new mapObject(8960,3328,1280,256,2), new mapObject(2048,5120,768,256,2), new mapObject(2304,4864,256,2048,2), new mapObject(4352,5120,768,256,2),
+	new mapObject(6656,4864,1024,256,2), new mapObject(6912,4608,256,2048,2), new mapObject(8960,4864,1024,256,2), new mapObject(768,4864,256,1280,2));
+	Intersections.push(new mapObject(768,1536,256,256,3), new mapObject(2048,1536,256,256,3), new mapObject(4352,1536,256,256,3), new mapObject(6656,1536,256,256,3),
+	new mapObject(768,2560,256,256,3), new mapObject(768,3840,256,256,3), new mapObject(2048,3840,256,256,3), new mapObject(4352,3328,256,256,3), 
+	new mapObject(5376,3072,256,256,3), new mapObject(6656,3072,256,256,3), new mapObject(8960,3072,256,256,3), new mapObject(2048,4864,256,256,3),
+	new mapObject(4352,4864,256,256,3), new mapObject(6656,4608,256,256,3), new mapObject(8960,4608,256,256,3));
+}
+function initDealer(){
+	var a = utils.getRandomInteger(0, Intersections.length - 1);
+	theDealer.x = Intersections[a].x + utils.getRandomInteger(30,Intersections[a].width-30);
+	theDealer.y = Intersections[a].y + utils.getRandomInteger(30,Intersections[a].height-30);
+}
+function SteeringForce() {
+	this.x = 0;
+	this.y = 0;
+}
+
+
+
+//******************
+//*	    ACTORS     *
+//******************
+
+//the Hobo, our loveable little playable character who must collect change to live.
+function Hobo(x, y) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.wallet = 0;
+	this.moneyCollected = 0;
+	this.crackSmoked = 0;
+	this.slowAmount = 0;
+	this.smokedCrack = false;	
+	
+	this.count1 = 0;
+	this.maxCount = 2500
+	this.count2 = this.maxCount;
+	this.count3 = 1700;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.5;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 0.5;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	
+		
+	
+}
+	
+Hobo.prototype.draw = function() {
+	context.save();
+	//draw wallet
+	context.translate(32, 670);
+	context.font = "30px Verdana"
+	context.fillStyle = "black"
+	context.fillText(this.wallet, 0,0);
+	context.restore();
+	//draw hobo
+	context.save();
+	context.translate(canvas.width/2, canvas.height/2)
+	context.rotate(this.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "red"
+	context.arc(0,0, 15, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath()
+	context.beginPath()
+	context.fillStyle = "black"
+	context.moveTo(1,0);
+	context.lineTo(1,16);
+	context.lineTo(-1,16);
+	context.lineTo(-1,0);
+	context.closePath();
+	context.fill();
+	//draw arrow
+	if(utils.getDistance(this.x, this.y, theDealer.x, theDealer.y) >= 400) {
+		context.beginPath();
+		context.rotate(-Math.atan2(theDealer.x - this.x, theDealer.y - this.y) - (this.orientation - (Math.PI/2))+Math.PI);
+		context.translate(-28,-400);
+		context.moveTo(28,0);
+		context.lineTo(56,56);
+		context.lineTo(40,56);
+		context.lineTo(40,120);
+		context.lineTo(16, 120);
+		context.lineTo(16, 56);
+		context.lineTo(0, 56);
+		context.closePath();
+		context.fillStyle = "red";
+		context.globalAlpha = 0.5;
+		context.fill();
+	}
+	context.restore();
+	context.save();
+	context.fillStyle = "green";
+	context.beginPath();
+	context.moveTo(0,0);
+	context.lineTo(canvas.width/(this.maxCount/this.count2),0);
+	context.lineTo(canvas.width/(this.maxCount/this.count2),50);
+	context.lineTo(0,50);
+	context.closePath();
+	context.fill();
+	context.restore();
+	
+	
+}
+
+Hobo.prototype.update = function() {
+	//crack makes you move faster while it is active
+	if(this.count1 < this.maxCount && !this.count3){this.count1+= REFMULTI; this.count2 -=REFMULTI}
+	else{this.count3--;}
+	var pc = (this.count1 / this.maxCount);
+	var ld = 0.5 + (pc * 1.5);
+	this.Body.SetLinearDamping(ld);
+	
+	//find out if we are touching any enemies and end the game if we are
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()){ //if we are enemy it returns 1
+				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+					gameState = 3;
+				}
+			}
+			if(!bodily.next){break;}
+			else{bodily = bodily.next}
+		}while(1)
+	}
+	
+	//keyboard input for our hobo
+	force = new b2Vec2(0,0);
+	if(chars.length === 1 ) { //if one key is pressed
+		
+		if (chars[0] == 87) { //W
+			force.x = 0;
+			force.y = -1;
+		}
+		else if (chars[0] == 65) { //A
+			force.x = -1;
+			force.y = 0;
+		}
+		else if (chars[0] == 83) { //S
+			force.x = 0;
+			force.y = 1;
+		}
+		else if (chars[0] == 68) { //D
+			force.x = 1;
+			force.y = 0;
+		}
+		if (chars.indexOf(32) > -1)
+		{
+			if(this.smokedCrack == false && this.wallet >= 20 && utils.getDistance(this.x, this.y, theDealer.x, theDealer.y) < 150){
+				this.smokedCrack = true;
+				this.crackSmoked++;
+				this.count1 = this.maxCount;
+				this.count3 = 1700;
+				myWallet.removeCoins(200);
+			}
+		}
+	}
+	else if(chars.length >= 2) { //if two keys are pressed
+		if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+			force.x = 0.5;
+			force.y = -0.5;
+		}
+		if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+			force.x = 0.5;
+			force.y = 0.5;
+		}
+		if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+			force.x = -0.5;
+			force.y = 0.5;
+		}
+		if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+			force.x = -0.5;
+			force.y = -0.5;
+		}
+		if (chars.indexOf(32) > -1)
+		{
+			if(this.smokedCrack == false && this.wallet >= 200 && utils.getDistance(this.x, this.y, theDealer.x, theDealer.y) < 150){
+				this.smokedCrack = true;
+				this.crackSmoked++;
+				this.count1 = 0;
+				this.count2 = this.maxCount;
+				this.count3 = 1700;
+				myWallet.removeCoins(200);
+			}
+		}
+	}
+	force.x = force.x*REFMULTI;
+	force.y = force.y*REFMULTI;
+	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+	//enforce max velocity
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	//var speed = vel.Normalize();
+	//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
+	//console.log(speed);
+	//console.log(vel.x);
+	//console.log(vel.y);
+	//update where our hobo is on screen
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+}
+
+//our hateable antagonists
+function Punk(x, y) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.maxAcceleration = .2;
+	var lastseenx = 0, lastseeny = 0, lastsight = 0;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 4;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.2;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 0.5;
+	this.bodyDef.userData = 1;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+}
+
+Punk.prototype.draw = function(ox,oy) {
+	context.save();
+	context.strokeStyle = "black";
+	//context.strokeText(this.x + " " + this.y,canvas.height,0);
+	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+	context.rotate(this.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "magenta"
+	context.arc(0,0, 15, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath();
+	context.beginPath();
+	context.fillStyle = "black";
+	context.moveTo(1,0);
+	context.lineTo(1,16);
+	context.lineTo(-1,16);
+	context.lineTo(-1,0);
+	context.closePath();
+	context.fill();
+	context.restore();
+	context.save()
+	if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
+		context.fillStyle = "magenta";
+		context.translate(canvas.width/2, canvas.height/2);
+		context.beginPath();
+		context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
+		context.translate(0, -200);
+		context.moveTo(0,0);
+		context.lineTo(7,7);
+		context.lineTo(-7,7);
+		context.closePath();
+		context.fill();
+		context.restore();
+	}
+}
+
+Punk.prototype.update = function() {
+	var force = new b2Vec2
+	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
+		force = pursue(this, Player.x, Player.y);
+	}
+	//lostsight += 1*REFMULTI
+	force.x = force.x*REFMULTI;
+	force.y = force.y*REFMULTI;
+	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+}
+//TAKE DRUGS, SMOKE CRACK ROCK, GET FUCKED UP.
+function Dealer(x, y) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.vx = 0;
+	this.vy = 0;
+}
+
+Dealer.prototype.draw = function(ox,oy) {
+	context.save();
+	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+	context.rotate(this.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "purple"
+	context.arc(0,0, 15, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath();
+	context.restore();
+}
+
+//******************
+//*	   OBJECTS     *
+//******************
+
+function Wallet() {
+	this.coins = [];
+	this.world = new b2World(new b2Vec2(0,10*SCALE), true);
+	this.timer = 0;
+	this.index = 0;
+	this.firstRun = false;
+	this.fixDef = new b2FixtureDef;
+	this.bodyDef = new b2BodyDef;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0;
+	this.bodyDef.type = b2Body.b2_staticBody;
+	this.bodyDef.position.x = -15/SCALE2;
+	this.bodyDef.position.y = 0
+	this.fixDef.shape = new b2PolygonShape();
+	this.fixDef.shape.SetAsBox(45/2/SCALE2, 20/2/SCALE2);
+	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+	
+	
+	this.bodyDef.position.x = 0
+	this.bodyDef.position.y = (canvas.height-200) / SCALE2
+	this.fixDef.shape = new b2PolygonShape();
+	this.fixDef.shape.SetAsBox(45/2/SCALE2, 20/2/SCALE2);
+	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+
+	
+	this.bodyDef.position.x = 22 / SCALE2;
+	this.bodyDef.position.y = canvas.height/2/SCALE2
+	this.fixDef.shape = new b2PolygonShape();
+	this.fixDef.shape.SetAsBox(20/2/SCALE2,canvas.height/2/SCALE2);
+	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+	
+	this.bodyDef.position.x = -22 / SCALE2;
+	this.bodyDef.position.y = canvas.height/2/SCALE2
+	this.fixDef.shape = new b2PolygonShape();
+	this.fixDef.shape.SetAsBox(20/2/SCALE2, canvas.height/2/SCALE2);
+	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+
+}
+
+Wallet.prototype.addCoin = function(coin){
+	
+	var cfixDef = new b2FixtureDef();
+	cfixDef.density = 0.5;
+    cfixDef.friction = 0.0;
+	cfixDef.restitution = 0;
+	cbodyDef = new b2BodyDef();
+	cbodyDef.type = b2Body.b2_dynamicBody;
+	cbodyDef.position.x = 0;
+	cbodyDef.position.y = 12/SCALE2;
+	cbodyDef.linearDamping = 0.5;
+	cfixDef.shape = new b2PolygonShape();
+	cfixDef.shape.SetAsBox(35/2/SCALE2, 7/2/SCALE2);
+	cbodyDef.userData = coin.value;
+	cbodyDef.fixedRotation=true;
+	var aCoin = this.world.CreateBody(cbodyDef);
+	aCoin.CreateFixture(cfixDef);
+	aCoin.ApplyImpulse(new b2Vec2(0,1), new b2Vec2);
+	this.coins.push(aCoin);
+	Player.wallet += aCoin.GetUserData();
+	console.log("added coin to wallet with value " + coin.value);
+	
+}
+
+Wallet.prototype.removeCoins = function(amount){
+	var done = false;
+	var total = 0;
+	do {
+		var coin = this.coins.shift();
+		total += coin.GetUserData();
+		this.world.DestroyBody(coin);
+		if(total >= amount){done = true}
+	}while(!done)
+	this.dropCoins = true;
+	Player.wallet -= total;
+	this.firstRun = true;
+}
+
+Wallet.prototype.draw = function() {
+	var theCoin;
+	var coinPos = new b2Vec2;
+	if (this.coins.length == 0){return 0;}
+	for(i = 0; i < this.coins.length; i++){
+		theCoin = this.coins[i];
+		coinPos = theCoin.GetWorldCenter();
+		context.save();
+		context.beginPath();
+		context.translate(50,50);
+		context.strokeStyle = "black";
+		context.font = "12px Verdana";
+		//context.strokeText((coinPos.x * SCALE), 0, 20);
+		context.translate((coinPos.x * SCALE2), (coinPos.y * SCALE2));
+		if(theCoin.GetUserData()==1){
+			context.fillStyle = "rgb(218,181,146)";
+			context.strokeStyle = "rgb(161,133,103)";
+		}
+		else if(theCoin.GetUserData()==5){
+			context.fillStyle = "rgb(186,186,186)";
+			context.strokeStyle = "rgb(145,145,145)";
+		}
+		else if(theCoin.GetUserData()==10){
+			context.fillStyle = "rgb(218,242,238)";
+			context.strokeStyle = "rgb(150,168,165)";
+		}
+		else if(theCoin.GetUserData()==25){
+			context.fillStyle = "rgb(207,207,207)";
+			context.strokeStyle = "rgb(186,186,186)";
+		}
+		context.rotate(theCoin.GetAngle());
+		context.translate(-35/2, -7/2);
+		context.moveTo(0, 0);
+		context.lineTo(35,0);
+		context.lineTo(35,7);
+		context.lineTo(0, 7);
+		//context.strokeText(Math.floor(coinPos.x) + " " + Math.floor(coinPos.y),35,0)
+		context.closePath();
+		context.fill();
+		context.stroke();
+		
+		context.restore();
+	}	
+}
+//the coin
+
+Wallet.prototype.update = function() {
+	if(this.coins.length){
+		for(i=0; i < this.coins.length; i++){
+			var linvel = new b2Vec2
+			linvel = this.coins[i].GetLinearVelocity();
+			if(utils.getMagnitude(linvel.x, linvel.y) == 0 && this.coins[i].GetType() == 2){
+				this.coins[i].SetType(0);
+				console.log("Froze Coin")
+			}
+		}
+	}
+	if(this.dropCoins) {
+		if(this.index == this.coins.length){
+			this.dropCoins = false;
+			this.index = 0;
+			return;
+		}
+		else if(this.timer == 5/REFMULTI){
+			this.timer = 0;
+			this.coins[this.index].SetType(2);
+			this.coins[this.index].ApplyImpulse(new b2Vec2(0,1), new b2Vec2);
+			this.index++;
+		}
+		else {this.timer++}
+		
+	}
+}
+
+function Coin(x, y, v) {
+	this.x = x;
+	this.y = y;
+	this.value = v;
+	this.vx = 0;
+	this.vy = 0;
+	this.maxSpeed = 10;
+	this.maxAcceleration = 20;
+	this.steeringForce = new b2Vec2;
+	this.pickedUp = false;
+	this.initpickup = false;
+	this.deposit = false;
+}
+
+Coin.prototype.draw = function(ox,oy) {
+	context.save();
+	if(this.pickedUp){context.translate(this.x, this.y);}
+	else {context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);}
+	if(this.value == 1) {
+		context.font = "12px Verdana";
+		var radius = 9.5;
+		context.fillStyle = "rgb(218,181,146)";
+		context.strokeStyle = "rgb(161,133,103)";
+		context.beginPath();
+		context.arc(0, 0, radius, 0, 2 * Math.PI);
+		context.fill();
+		context.stroke();
+		context.strokeText("1",-4.5,4);	
+	}
+	else if(this.value == 5) {//nickel
+		context.font = "12px Verdana";
+		var radius = 10;
+		context.fillStyle = "rgb(186,186,186)";
+		context.strokeStyle = "rgb(145,145,145)";
+		context.beginPath();
+		context.arc(0, 0, radius, 0, 2 * Math.PI);
+		context.fill();
+		context.stroke();
+		context.strokeText("5",-4.5,4);		
+	}
+	else if(this.value == 10) { //dime
+		context.font = "12px Verdana";
+		var radius = 9;
+		context.fillStyle = "rgb(218,242,238)";
+		context.strokeStyle = "rgb(150,168,165)";
+		context.beginPath();
+		context.arc(0, 0, radius, 0, 2 * Math.PI);
+		context.fill();
+		context.stroke();
+		context.font = "10px Verdana";
+		context.strokeText("10",-6,3);
+	}
+	else if(this.value == 25) {//quarter
+		context.font = "12px Verdana";
+		var radius = 12;
+		context.fillStyle = "rgb(207,207,207)";
+		context.strokeStyle = "rgb(130,130,130)";
+		context.beginPath();
+		context.arc(0, 0, radius, 0, 2 * Math.PI);
+		context.fill();
+		context.stroke();
+		context.strokeText("25",-8,4);
+	}	
+	context.restore();
+}
+ 
+//move towards the player and add self to player's inventory if they collide
+Coin.prototype.update = function() {
+	if(this.pickedUp && !this.deposit) {
+			if(utils.getDistance(this.x, this.y, 50,50) < 20) {
+				myWallet.addCoin(this);
+				Player.moneyCollected += this.value
+				this.x = -9001;
+				this.y = -9001;
+				this.vx = 0;
+				this.vy = 0;
+				this.steeringForce.x = 0;
+				this.steeringForce.y = 0;
+				spawner.pushRandomCoin();
+				this.deposit = true;
+			}
+		}
+	else if(!this.pickedUp && utils.getDistance(this.x, this.y, Player.x, Player.y) < 100) {
+		this.steeringForce = seek(this, Player.x, Player.y);
+	}
+	if(!this.initpickup && utils.getDistance(this.x, this.y, Player.x, Player.y) < 20 ) {
+		this.pickedUp = true;
+		this.x = canvas.width/2;
+		this.y = canvas.height/2;
+		this.vx = 0;
+		this.vy = 0;
+		this.steeringForce.x = 0;
+		this.steeringForce.y = 0;
+		this.initpickup = true;
+		this.steeringForce = seek(this, 50, 50);
+	}
+	
+	this.x += this.vx;
+	this.y += this.vy;
+	this.vx += this.steeringForce.x;
+	this.vy += this.steeringForce.y;
+	this.vx *= REFMULTI;
+	this.vy *= REFMULTI;
+	var speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+	if (speed > 0 && speed > this.maxSpeed*REFMULTI) {
+		this.vx = (this.vx / speed) * this.maxSpeed*REFMULTI;
+		this.vy = (this.vy / speed) * this.maxSpeed*REFMULTI;
+	}
+	
+}
+
+function mapObject(x, y, h, w, t) {
+	this.x = x;
+	this.y = y;
+	this.height = h;
+	this.width = w;
+	this.type = t;
+	/* 
+	type 
+		1 = building
+		2 = road
+		3 = intersecton
+	*/
+	if(this.type == 1) {
+		//set up BOX2D object
+		this.fixDef = new b2FixtureDef;
+		this.fixDef.density = 5.0;
+		this.fixDef.friction = 0.0;
+		this.fixDef.restitution = 0.5;
+		this.bodyDef = new b2BodyDef;
+		this.bodyDef.type = b2Body.b2_staticBody;
+		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
+		this.fixDef.shape = new b2PolygonShape();
+		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
+		this.Body = world.CreateBody(this.bodyDef);
+		this.Body.CreateFixture(this.fixDef);
+	}
+}
+
+mapObject.prototype.draw = function(ox,oy) {
+	
+		if(this.type == 1) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.fillStyle = "rgb(89,71,71)";
+			context.beginPath();
+			context.moveTo(-1,-1);
+			context.lineTo(this.width+1, -1);
+			context.lineTo(this.width+1, this.height+1);
+			context.lineTo(-1, this.height+1);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}	
+		else if(this.type == 2) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.fillStyle = "rgb(196,196,196)";
+			context.beginPath();
+			context.moveTo(-1,-1);
+			context.lineTo(this.width+1, -1);
+			context.lineTo(this.width+1, this.height+1);
+			context.lineTo(-1, this.height+1);
+			context.closePath();
+			context.fill();
+		
+			context.fillStyle = "yellow";
+			
+			if(this.height < this.width){
+				context.translate(0, (this.height/2)-10);
+				var num = Math.floor(this.width/64)
+				var num2 = this.width/num;
+				num = num/2;
+				var num3 = 0;
+				for(var i=0; i < num; ++i) {
+					context.beginPath();
+					context.fillRect(num3,0,num2, 20);
+					num3 = num3 + num2*2
+					context.closePath();
+				}
+			}
+			else {
+				context.translate((this.width/2)-10, 0);
+				var num = Math.floor(this.height/64)
+				var num2 = this.height/num;
+				num = num/2;
+				var num3 = 0;
+				for(var i=0; i < num; ++i) {
+					context.beginPath();
+					context.fillRect(0,num3, 20, num2);
+					num3 = num3 + num2*2
+					context.closePath();
+				}				
+			}
+			context.restore();
+		}
+		else if(this.type == 3) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.fillStyle = "yellow";
+			context.beginPath();
+			context.moveTo(0,0);
+			context.lineTo(this.width, 0);
+			context.lineTo(this.width, this.height);
+			context.lineTo(0, this.height);
+			context.closePath();
+			context.fill();
+			context.fillStyle = "rgb(196,196,196)";
+			context.beginPath();
+			context.moveTo(20,20);
+			context.lineTo(this.width - 20,20);
+			context.lineTo(this.width - 20, this.height - 20);
+			context.lineTo(20, this.height - 20);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	
+	
+}
+
+mapObject.prototype.update = function() {
+
+}
+
+function debugDraw() {
+	
+}
+
+function spawnController() {
+	this.pushRandomCoin = function() {
+			var a = utils.getRandomInteger(0, Roads.length - 1);
+			var b = Roads[a];
+			var c = utils.getRandomInteger(30, b.width-30);
+			var d = utils.getRandomInteger(30, b.height-30);
+			var e = utils.getRandomInteger(0, 100)
+			if(e > 95){e = 25;}
+			else if(e <= 95 && e > 80){e = 10;}
+			else if(e <= 80 && e > 50){e = 5;}
+			else if(e <= 50 && e >= 0){e = 1;}
+			Pickups.push(new Coin(Roads[a].x + c, Roads[a].y + d, e));
+		}
+	this.maxcoins = 75
+	this.initWorld = function() {
+	for(i = 0; i < 30; i++){ //make punks
+			var a = utils.getRandomInteger(0, Roads.length - 1);
+			var b = Roads[a];
+			var c = utils.getRandomInteger(0, b.width);
+			var d = utils.getRandomInteger(0, b.height);
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d));
+		}
+	for(i = 0; i < this.maxcoins; i++){ //make coins
+			this.pushRandomCoin();
+		}
+	}
+	this.count = 0;
+	
+	this.update = function() {
+		if(Player.smokedCrack){
+			a = utils.getRandomInteger(0, Intersections.length - 1);
+			theDealer.x = Intersections[a].x + utils.getRandomInteger(30,Intersections[a].width-30);
+			theDealer.y = Intersections[a].y + utils.getRandomInteger(30,Intersections[a].height-30);
+			Player.smokedCrack = false;
+		}
+	}
+}
+
+
+//**********************
+//* STEERING BEHAVIORS *
+//**********************
+
+function ease1(t, b, c, d) {//Ease in Quintic
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(tc*ts);
+}
+function easeIQr(t) {//Easing In Quart
+	return t*t*t*t;
+}
+function easeOQn(t) {//Easing Out Quint
+	return 1+(--t)*t*t*t*t
+}
+function ease2(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(1.5*tc*ts + -2*ts*ts + 3*tc + -2*ts + 0.5*t);
+}
+function seek(agent, targetX, targetY) {//move toward
+	var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = utils.getMagnitude(x, y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+	
+}
+function arrive(agent, targetX, targetY) {
+	var result = new b2Vec2;
+	//get direction from agent to target
+	var directionX = targetX - agent.x;
+	var directionY = targetY - agent.y;
+	
+	// normalize direction
+	var distance = utils.getMagnitude(directionX, directionY);
+	directionX = directionX / distance; 
+	directionY = directionY / distance; 
+	
+	if (distance > 200) {
+		targetSpeed = agent.maxAcceleration;
+	}
+	else {
+		targetSpeed = agent.maxAcceleration * distance / 200;
+	}
+	var targetVelocityX = directionX * targetSpeed;
+	var targetVelocityY = directionY * targetSpeed;
+
+	// steer toward desired velocity
+	result.x = (targetVelocityX - agent.Body.GetLinearVelocity.x);
+	result.y = (targetVelocityY - agent.Body.GetLinearVelocity.y);
+	
+	return result;
+}
+function flee(agent, targetX, targetY) {// move away
+	var x = agent.x - targetX;
+	var y = agent.y - targetY;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+function pursue(agent, targetX, targetY) {// move toward target future position
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return seek(agent, targetNewX, targetNewY);
+}
+function evade(agent, targetX, targetY) {// evade away from future target position
+	//var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+	
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	var t = dist / targetMaxS;
+	
+	var targetNewX = targetVX * t + targetX;
+	var targetNewY = targetVY * t + targetY;
+	
+	return flee(agent, targetNewX, targetNewY, steeringForce);
+}	
+function wander(agent, steeringForce) {
+	// perturb wander angle by a small random amount.
+	var deltaWander = Math.random() * agent.wanderRate;
+	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
+			
+	// move target to wanderOffset in front of agent
+	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
+	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
+	
+	// draw the wander circle, etc. if drawDebug is enabled.
+	if (drawDebug == true) {
+		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
+		drawCircle(targetX, targetY, 8);
+		context.moveTo(agent.x, agent.y);
+		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
+		context.lineTo(targetX, targetY);
+		context.stroke();
+	}
+	
+	// seek toward the target point
+	return seek(agent, targetX, targetY, steeringForce);
+}
+function separation(agent, neighbors) {
+	for (var i = 0; i < neighbors.length; ++i) {
+		var toAgentX = agent.x - neighbors[i].x;
+		var toAgentY = agent.y - neighbors[i].y;
+		var toAgentMagnitude = utils.getMagnitude(toAgentX, toAgentY);
+		if (toAgentMagnitude > 0) {
+			var normalizedToAgentX = toAgentX / toAgentMagnitude;
+			var normalizedToAgentY = toAgentY / toAgentMagnitude;
+			
+			// scale force to inversely proportional to distance from neighbor:
+			this.steeringForce.x += normalizedToAgentX / toAgentMagnitude;
+			this.steeringForce.y += normalizedToAgentY / toAgentMagnitude;
+		}
+	}
+}
+
+init();
+initDealer();
+var spawner = new spawnController();
+spawner.initWorld();
+//setup debug draw for box2d
+var debugDraw = new b2DebugDraw();
+debugDraw.SetSprite(document.getElementById("gameCanvas").getContext("2d"));
+debugDraw.SetDrawScale(SCALE); 
+debugDraw.SetFillAlpha(.5);
+debugDraw.SetLineThickness(1.0);
+debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+myWallet.world.SetDebugDraw(debugDraw);
+
+var gameState = 1;
+(function tick() {
+	if(gameState == 0) {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+	}
+	if(gameState == 1) {
+		world.Step((1/60),10,10);
+		myWallet.world.Step((1/120),10,20);
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+		for(var i = 0; i < Buildings.length; ++i) {
+			Buildings[i].update();
+			Buildings[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Roads.length; ++i) {
+			Roads[i].update();
+			Roads[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Intersections.length; ++i) {
+			Intersections[i].update();
+			Intersections[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Pickups.length; ++i) {
+			Pickups[i].update();
+			Pickups[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Agents.length; ++i) {
+			var agent = Agents[i];
+			agent.update();
+			agent.draw(Player.x, Player.y);
+		}
+		theDealer.draw(Player.x, Player.y);
+		Player.update();
+		Player.draw();
+		context.save();
+		myWallet.update();
+		myWallet.draw();
+		spawner.update();
+		//myWallet.world.DrawDebugData();
+		requestAnimationFrame(tick);
+	}
+	if(gameState == 3) {
+		context.save();
+		context.fillStyle = "black";
+		context.globalAlpha = 0.5;
+		context.fillRect(0, 0, canvas.width, canvas.height)
+		context.fillStyle = "red";
+		context.globalAlpha = 1;
+		context.font = "75px Verdana";
+		context.fillText("GAME OVER",canvas.width/2 - 220, 200);
+		context.font = "25px Verdana";
+		var dollars = Math.floor(Player.moneyCollected/100)
+		var cents = Math.round((Player.moneyCollected/100 - dollars) * 100)
+		context.fillText("You picked up $" + dollars + "." + cents, canvas.width/2 - 140, 240);
+		context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
+		context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
+	}
+	
+})();
+
+</script></body></html>
