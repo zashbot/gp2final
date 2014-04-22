@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>Hobo Survival</title>
+<style>
+	body { 
+		background-color:#000;
+	}
+	canvas {
+		background-color:#FFF;
+	}
+</style>
+</head><body>
+<img id="road_horiz" src="./images/road_horiz.png" alt="road_horiz" width="0" height="0">
+<img id="road_vert" src="./images/road_vert.png" alt="road_vert" width="0" height="0">
+<img id="inters" src="./images/inters.png" alt="inters" width="0" height="0">
+<img id="car" src="./images/car2.png" alt="car" width="0" height="0">
+<img id="player" src="./images/player.png" alt="player" width="0" height="0">
+<img id="building" src="./images/building.png" alt="building" width="0" height="0">
+<center>
+<canvas id="gameCanvas" width="1280" height="800"></canvas>
+</center>
+<script src="./scripts/utils.js"></script>
+<script src="./scripts/box2d.js"></script>
+<script>
+var REFMULTI = 2; //1= 120hz 2 =60hz
+
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+var mouse = utils.captureMouse(canvas);
+
+//box2d stuff
+var SCALE = 30;
+var SCALE2 = 15;
+
+var world;
+var b2Vec2 = Box2D.Common.Math.b2Vec2;
+var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+var b2Body = Box2D.Dynamics.b2Body;
+var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+var b2Fixture = Box2D.Dynamics.b2Fixture;
+var b2World = Box2D.Dynamics.b2World;
+var b2MassData = Box2D.Collision.Shapes.b2MassData;
+var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+var b2AABB = Box2D.Collision.b2AABB;
+var b2WorldManifold = Box2D.Collision.b2WorldManifold;
+var b2ManifoldPoint = Box2D.Collision.b2ManifoldPoint;
+var b2RayCastInput = Box2D.Collision.b2RayCastInput;
+var b2RayCastOutput = Box2D.Collision.b2RayCastOutput;
+var b2Listener = Box2D.Dynamics.b2ContactListener;
+
+world = new b2World(new b2Vec2(0,0), true);
+
+var Player = new Hobo(895,1664);
+//var Car = new Hobo(1000,1664);
+
+var Agents = [];
+var Pickups = [];
+var Buildings = [];
+var Roads = [];
+var Intersections = [];
+var chars = [];
+var cars = [];
+
+var state = 1;
+
+window.addEventListener("keydown", function(e) {
+	if(chars.indexOf(e.keyCode) == -1) {
+		chars.push(e.keyCode);
+		//console.log(chars.toString());
+	}
+}, false);
+window.addEventListener("keyup", function(e) {
+	var index = chars.indexOf(e.keyCode);
+	chars.splice(index, 1);
+}, false);
+window.addEventListener("keyup", onKeyUp, false);
+function init(){
+
+	//x,y,height,width,type (1=b 2=s 3=i)
+	Buildings.push(new mapObject(0,0,768,9984,1), new mapObject(0,768,5120,768,1), new mapObject(0,5888,768,9216,1 ), 
+	new mapObject(9216,768,5888,768,1 ), new mapObject(768,768,768,1280,1), new mapObject(768,4096,768,1280,1), new mapObject(2304,768,768,2048,1 ), new mapObject(4608,768,768,2048,1),
+	new mapObject(6912,768,768,1024,1), new mapObject(8192,768,1024,1024,1), new mapObject(1024,1792,768,1024,1), new mapObject(2304,1792,1536,2048,1),
+	new mapObject(4608,1792,1280,2048,1), new mapObject(6912,1792,1280,2304,1), new mapObject(1024,2816,1024,1024,1),new mapObject(2304,3584,1280,2048,1),
+	new mapObject(4608,3328,2560,768,1), new mapObject(5632,3328,2560,1024,1), new mapObject(6912,3328,1280,2048,1), new mapObject(768,5120,768,1280,1),
+	new mapObject(2304,5120,768,2048,1), new mapObject(6912,4864,1024,2048,1));
+	Roads.push(new mapObject(1024,1536,256,1024,2), new mapObject(2048,768,768,256,2), new mapObject(2304,1536,256,2048,2), new mapObject(4352,768,768,256,2),
+	new mapObject(4608,1536,256,2048,2), new mapObject(6656,768,768,256,2), new mapObject(6912,1536,256,1280,2), new mapObject(7936,768,768,256,2),
+	new mapObject(768,1792,768,256,2), new mapObject(1024,2560,256,1024,2), new mapObject(2048,1792,1536,256,2), new mapObject(4352,1792,1536,256,2),
+	new mapObject(6656,1792,1280,256,2), new mapObject(768,2816,1024,256,2), new mapObject(1024,3840,256,1024,2), new mapObject(2048,3328,512,256,2),
+	new mapObject(2304,3328,256,2048,2), new mapObject(4608,3072,256,768,2), new mapObject(5632,3072,256,1024,2), new mapObject(6912,3072,256,2048,2),
+	new mapObject(2048,4096,768,256,2), new mapObject(4352,3584,1280,256,2), new mapObject(5376,3328,2560,256,2), new mapObject(6656,3328,1280,256,2),
+	new mapObject(8960,3328,1280,256,2), new mapObject(2048,5120,768,256,2), new mapObject(2304,4864,256,2048,2), new mapObject(4352,5120,768,256,2),
+	new mapObject(6656,4864,1024,256,2), new mapObject(6912,4608,256,2048,2), new mapObject(8960,4864,1024,256,2), new mapObject(768,4864,256,1280,2));
+	Intersections.push(new mapObject(768,1536,256,256,3), new mapObject(2048,1536,256,256,3), new mapObject(4352,1536,256,256,3), new mapObject(6656,1536,256,256,3),
+	new mapObject(768,2560,256,256,3), new mapObject(768,3840,256,256,3), new mapObject(2048,3840,256,256,3), new mapObject(4352,3328,256,256,3), 
+	new mapObject(5376,3072,256,256,3), new mapObject(6656,3072,256,256,3), new mapObject(8960,3072,256,256,3), new mapObject(2048,4864,256,256,3),
+	new mapObject(4352,4864,256,256,3), new mapObject(6656,4608,256,256,3), new mapObject(8960,4608,256,256,3));
+}
+function initDealer(){
+	var a = utils.getRandomInteger(0, Intersections.length - 1);
+	theDealer.x = Intersections[a].x + utils.getRandomInteger(30,Intersections[a].width-30);
+	theDealer.y = Intersections[a].y + utils.getRandomInteger(30,Intersections[a].height-30);
+}
+function SteeringForce() {
+	this.x = 0;
+	this.y = 0;
+}
+
+
+
+//******************
+//*	    ACTORS     *
+//******************
+
+//the Hobo, our loveable little playable character who must collect change to live.
+function Hobo(x, y) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.wallet = 0;
+	this.moneyCollected = 0;
+	this.crackSmoked = 0;
+	this.slowAmount = 0;
+	this.smokedCrack = false;	
+	
+	this.count1 = 0;
+	this.maxCount = 2500
+	this.count2 = this.maxCount;
+	this.count3 = 1700;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.5;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 0.5;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	
+		
+	
+}
+	
+Hobo.prototype.draw = function() {
+	//draw hobo
+	context.save();
+	context.translate(canvas.width/2, canvas.height/2);
+	context.rotate(this.orientation + (Math.PI/2));
+	
+	if (state == 1) {
+		var img=document.getElementById("car");
+		context.drawImage(img,-16,-32);
+	} else {
+		var img=document.getElementById("player");
+		context.drawImage(img,-16,-16);
+	}
+	
+	context.restore();
+
+}
+
+Hobo.prototype.update = function(name) {
+	if (state == 1) {	
+		
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -1;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -1;
+				force.y = 0;
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = 1;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = 1;
+				force.y = 0;
+			}
+			/*else if (chars[0] == 69) { //E
+				if (state == 1) {
+					state = 0;
+				} else if (state == 0) {
+					state = 1;
+				}
+			}*/
+
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = 0.5;
+				force.y = -0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = 0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -0.5;
+				force.y = -0.5;
+			}
+			if (chars.indexOf(32) > -1)
+			{
+				if(this.smokedCrack == false && this.wallet >= 200 && utils.getDistance(this.x, this.y, theDealer.x, theDealer.y) < 150){
+					this.smokedCrack = true;
+					this.crackSmoked++;
+					this.count1 = 0;
+					this.count2 = this.maxCount;
+					this.count3 = 1700;
+				}
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+		//var speed = vel.Normalize();
+		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
+		//console.log(speed);
+		//console.log(vel.x);
+		//console.log(vel.y);
+		//update where our hobo is on screen
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		if (vel.x >= 25) {
+			vel.x = 25;
+		}
+		if (vel.x <= -25) {
+			vel.x = -25;
+		}
+		if (vel.y >= 25) {
+			vel.y = 25;
+		}
+		if (vel.y <= -25) {
+			vel.y = -25;
+		}
+	} else {
+		
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -1;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -1;
+				force.y = 0;
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = 1;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = 1;
+				force.y = 0;
+			}
+			/*else if (chars[0] == 69) { //E
+				if (state == 1) {
+					state = 0;
+				} else if (state == 0) {
+					state = 1;
+				}
+			}*/
+
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = 0.5;
+				force.y = -0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = 0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -0.5;
+				force.y = -0.5;
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+		
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+		//var speed = vel.Normalize();
+		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
+		//console.log(speed);
+		//console.log(vel.x);
+		//console.log(vel.y);
+		//update where our hobo is on screen
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		
+		if (vel.x >= 7) {
+			vel.x = 7;
+		}
+		if (vel.x <= -7) {
+			vel.x = -7;
+		}
+		if (vel.y >= 7) {
+			vel.y = 7;
+		}
+		if (vel.y <= -7) {
+			vel.y = -7;
+		}
+	}
+}
+
+function onKeyUp(e) {
+	switch(e.keyCode) {
+		case 69: // E
+			//Player.x,Player.y
+			x = Player.x;
+			y = Player.y;
+			
+			if (state == 1) {
+				state = 0;
+			} else if (state == 0) {
+				state = 1;
+			}
+			break;
+	};
+}
+//******************
+//*	   OBJECTS     *
+//******************
+
+
+function mapObject(x, y, h, w, t) {
+	this.x = x;
+	this.y = y;
+	this.height = h;
+	this.width = w;
+	this.type = t;
+	/* 
+	type 
+		1 = building
+		2 = road
+		3 = intersecton
+	*/
+	if(this.type == 1) {
+		//set up BOX2D object
+		this.fixDef = new b2FixtureDef;
+		this.fixDef.density = 5.0;
+		this.fixDef.friction = 0.0;
+		this.fixDef.restitution = .001;
+		this.bodyDef = new b2BodyDef;
+		this.bodyDef.type = b2Body.b2_staticBody;
+		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
+		this.fixDef.shape = new b2PolygonShape();
+		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
+		this.Body = world.CreateBody(this.bodyDef);
+		this.Body.CreateFixture(this.fixDef);
+	}
+}
+
+mapObject.prototype.draw = function(ox,oy) {
+	
+		if(this.type == 1) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			var img=document.getElementById("building");
+			context.drawImage(img,0,0, this.width, this.height);
+			/*context.fillStyle = "rgb(89,71,71)";
+			context.beginPath();
+			context.moveTo(-1,-1);
+			context.lineTo(this.width+1, -1);
+			context.lineTo(this.width+1, this.height+1);
+			context.lineTo(-1, this.height+1);
+			context.closePath();
+			context.fill();*/
+			context.restore();
+		}	
+		else if(this.type == 2) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			
+			
+			if(this.height < this.width){
+				//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+				var img=document.getElementById("road_horiz");
+
+				context.drawImage(img,0,0,this.width, this.height);
+			} else {
+				//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+				var img2=document.getElementById("road_vert");
+				context.drawImage(img2,0,0,this.width, this.height);
+			}
+			
+			//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			/*context.fillStyle = "rgb(196,196,196)";
+			context.beginPath();
+			context.moveTo(-1,-1);
+			context.lineTo(this.width+1, -1);
+			context.lineTo(this.width+1, this.height+1);
+			context.lineTo(-1, this.height+1);
+			context.closePath();
+			context.fill();
+		
+			context.fillStyle = "yellow";
+			*/
+			context.fillStyle = "white";
+			if(this.height < this.width){
+				context.translate(0, (this.height/2)-10);
+				var num = Math.floor(this.width/64)
+				var num2 = this.width/num;
+				num = num/2;
+				var num3 = 0;
+				for(var i=0; i < num; ++i) {
+					context.beginPath();
+					context.fillRect(num3,0,num2, 10);
+					num3 = num3 + num2*2
+					context.closePath();
+				}
+			}
+			else {
+				context.translate((this.width/2)-10, 0);
+				var num = Math.floor(this.height/64)
+				var num2 = this.height/num;
+				num = num/2;
+				var num3 = 0;
+				for(var i=0; i < num; ++i) {
+					context.beginPath();
+					context.fillRect(0,num3, 10, num2);
+					num3 = num3 + num2*2
+					context.closePath();
+				}				
+			}
+			
+			context.restore();
+		}
+		else if(this.type == 3) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			var img=document.getElementById("inters");
+			context.drawImage(img,0,0);
+			/*context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.fillStyle = "yellow";
+			context.beginPath();
+			context.moveTo(0,0);
+			context.lineTo(this.width, 0);
+			context.lineTo(this.width, this.height);
+			context.lineTo(0, this.height);
+			context.closePath();
+			context.fill();
+			context.fillStyle = "rgb(196,196,196)";
+			context.beginPath();
+			context.moveTo(20,20);
+			context.lineTo(this.width - 20,20);
+			context.lineTo(this.width - 20, this.height - 20);
+			context.lineTo(20, this.height - 20);
+			context.closePath();
+			context.fill();*/
+			context.restore();
+		}
+	
+	
+}
+
+mapObject.prototype.update = function() {
+
+}
+
+
+
+//**********************
+//* STEERING BEHAVIORS *
+//**********************
+
+function ease1(t, b, c, d) {//Ease in Quintic
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(tc*ts);
+}
+function easeIQr(t) {//Easing In Quart
+	return t*t*t*t;
+}
+function easeOQn(t) {//Easing Out Quint
+	return 1+(--t)*t*t*t*t
+}
+function ease2(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(1.5*tc*ts + -2*ts*ts + 3*tc + -2*ts + 0.5*t);
+}
+function seek(agent, targetX, targetY) {//move toward
+	var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = utils.getMagnitude(x, y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+	
+}
+function arrive(agent, targetX, targetY) {
+	var result = new b2Vec2;
+	//get direction from agent to target
+	var directionX = targetX - agent.x;
+	var directionY = targetY - agent.y;
+	
+	// normalize direction
+	var distance = utils.getMagnitude(directionX, directionY);
+	directionX = directionX / distance; 
+	directionY = directionY / distance; 
+	
+	if (distance > 200) {
+		targetSpeed = agent.maxAcceleration;
+	}
+	else {
+		targetSpeed = agent.maxAcceleration * distance / 200;
+	}
+	var targetVelocityX = directionX * targetSpeed;
+	var targetVelocityY = directionY * targetSpeed;
+
+	// steer toward desired velocity
+	result.x = (targetVelocityX - agent.Body.GetLinearVelocity.x);
+	result.y = (targetVelocityY - agent.Body.GetLinearVelocity.y);
+	
+	return result;
+}
+function flee(agent, targetX, targetY) {// move away
+	var x = agent.x - targetX;
+	var y = agent.y - targetY;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+function pursue(agent, targetX, targetY) {// move toward target future position
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return seek(agent, targetNewX, targetNewY);
+}
+function evade(agent, targetX, targetY) {// evade away from future target position
+	//var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+	
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	var t = dist / targetMaxS;
+	
+	var targetNewX = targetVX * t + targetX;
+	var targetNewY = targetVY * t + targetY;
+	
+	return flee(agent, targetNewX, targetNewY, steeringForce);
+}	
+function wander(agent, steeringForce) {
+	// perturb wander angle by a small random amount.
+	var deltaWander = Math.random() * agent.wanderRate;
+	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
+			
+	// move target to wanderOffset in front of agent
+	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
+	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
+	
+	// draw the wander circle, etc. if drawDebug is enabled.
+	if (drawDebug == true) {
+		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
+		drawCircle(targetX, targetY, 8);
+		context.moveTo(agent.x, agent.y);
+		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
+		context.lineTo(targetX, targetY);
+		context.stroke();
+	}
+	
+	// seek toward the target point
+	return seek(agent, targetX, targetY, steeringForce);
+}
+function separation(agent, neighbors) {
+	for (var i = 0; i < neighbors.length; ++i) {
+		var toAgentX = agent.x - neighbors[i].x;
+		var toAgentY = agent.y - neighbors[i].y;
+		var toAgentMagnitude = utils.getMagnitude(toAgentX, toAgentY);
+		if (toAgentMagnitude > 0) {
+			var normalizedToAgentX = toAgentX / toAgentMagnitude;
+			var normalizedToAgentY = toAgentY / toAgentMagnitude;
+			
+			// scale force to inversely proportional to distance from neighbor:
+			this.steeringForce.x += normalizedToAgentX / toAgentMagnitude;
+			this.steeringForce.y += normalizedToAgentY / toAgentMagnitude;
+		}
+	}
+}
+
+init();
+
+//var spawner = new spawnController();
+//spawner.initWorld();
+
+var gameState = 1;
+(function tick() {
+	if(gameState == 0) {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+	}
+	if(gameState == 1) {
+		world.Step((1/60),10,10);
+		
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+		for(var i = 0; i < Buildings.length; ++i) {
+			Buildings[i].update();
+			Buildings[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Roads.length; ++i) {
+			Roads[i].update();
+			Roads[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Intersections.length; ++i) {
+			Intersections[i].update();
+			Intersections[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Pickups.length; ++i) {
+			Pickups[i].update();
+			Pickups[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Agents.length; ++i) {
+			var agent = Agents[i];
+			agent.update();
+			agent.draw(Player.x, Player.y);
+		}
+		
+		Player.update();
+		Player.draw();
+		
+		//Car.update();
+		//Car.draw();
+		
+		context.save();
+		
+		//console.log(state);
+
+		requestAnimationFrame(tick);
+	}
+	if(gameState == 3) {
+		context.save();
+		context.fillStyle = "black";
+		context.globalAlpha = 0.5;
+		context.fillRect(0, 0, canvas.width, canvas.height)
+		context.fillStyle = "red";
+		context.globalAlpha = 1;
+		context.font = "75px Verdana";
+		context.fillText("GAME OVER",canvas.width/2 - 220, 200);
+		context.font = "25px Verdana";
+		var dollars = Math.floor(Player.moneyCollected/100)
+		var cents = Math.round((Player.moneyCollected/100 - dollars) * 100)
+		context.fillText("You picked up $" + dollars + "." + cents, canvas.width/2 - 140, 240);
+		context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
+		context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
+	}
+	
+})();
+
+</script></body></html>
