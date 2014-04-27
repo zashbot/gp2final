@@ -20,8 +20,11 @@
 <canvas id="gameCanvas" width="1280" height="800"></canvas>
 </center>
 <script src="./scripts/utils.js"></script>
+<script src="./scripts/imageLoader.js"></script>
 <script src="./scripts/box2d.js"></script>
+    <script src="./scripts/ship.js"></script>
 <script>
+
 var REFMULTI = 2; //1= 120hz 2 =60hz
 
 var canvas = document.getElementById("gameCanvas");
@@ -52,7 +55,7 @@ var b2Listener = Box2D.Dynamics.b2ContactListener;
 
 world = new b2World(new b2Vec2(0,0), true);
 
-var Player = new Hobo(895,1664);
+var Player = new Hobo(900,600);
 //var Car = new Hobo(1000,1664);
 
 var Agents = [];
@@ -76,10 +79,51 @@ window.addEventListener("keyup", function(e) {
 	chars.splice(index, 1);
 }, false);
 window.addEventListener("keyup", onKeyUp, false);
+window.addEventListener("keydown", onKeyDown, false);
+var cols = 52;
+var rows = 34;
+var tileSize = 256;
+//1 = building, 2 = vert, 3 = horiz, 4 = inters
+var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,4,3,3,4,3,3,3,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,3,3,4,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,3,3,4,3,3,3,3,4,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,3,3,3,4,3,3,3,3,3,4,3,3,3,3,4,4,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,4,3,3,3,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,3,4,3,4,3,3,3,4,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,1,1,2,1,1,1,
+1,1,1,1,1,2,3,3,3,4,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,4,3,3,3,4,3,3,3,4,3,3,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,4,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,1,1,1,1,1,1,4,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,4,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,3,3,3,4,3,3,3,4,1,1,1,1,4,1,1,1,1,1,2,1,1,1,4,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,3,4,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,4,3,4,4,3,3,4,3,4,3,3,3,2,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,4,1,1,1,
+1,1,1,2,3,4,3,3,4,4,3,4,3,4,3,3,4,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,4,4,1,1,1,2,1,1,4,4,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,3,4,3,4,3,3,3,3,4,3,3,4,3,4,3,3,3,3,4,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,4,3,3,4,3,4,4,3,3,4,4,3,3,4,3,3,3,4,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,4,3,3,3,3,3,4,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,4,3,4,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,4,3,3,3,3,3,3,4,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,3,3,3,3,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,4,3,3,4,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,4,3,3,4,3,3,4,3,3,3,4,1,1,1,1,1,4,3,3,4,3,3,3,3,3,3,4,3,3,4,3,3,3,3,3,3,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+
+
 function init(){
 
 	//x,y,height,width,type (1=b 2=s 3=i)
-	Buildings.push(new mapObject(0,0,768,9984,1), new mapObject(0,768,5120,768,1), new mapObject(0,5888,768,9216,1 ), 
+	/*Buildings.push(new mapObject(0,0,768,9984,1), new mapObject(0,768,5120,768,1), new mapObject(0,5888,768,9216,1 ), 
 	new mapObject(9216,768,5888,768,1 ), new mapObject(768,768,768,1280,1), new mapObject(768,4096,768,1280,1), new mapObject(2304,768,768,2048,1 ), new mapObject(4608,768,768,2048,1),
 	new mapObject(6912,768,768,1024,1), new mapObject(8192,768,1024,1024,1), new mapObject(1024,1792,768,1024,1), new mapObject(2304,1792,1536,2048,1),
 	new mapObject(4608,1792,1280,2048,1), new mapObject(6912,1792,1280,2304,1), new mapObject(1024,2816,1024,1024,1),new mapObject(2304,3584,1280,2048,1),
@@ -96,12 +140,7 @@ function init(){
 	Intersections.push(new mapObject(768,1536,256,256,3), new mapObject(2048,1536,256,256,3), new mapObject(4352,1536,256,256,3), new mapObject(6656,1536,256,256,3),
 	new mapObject(768,2560,256,256,3), new mapObject(768,3840,256,256,3), new mapObject(2048,3840,256,256,3), new mapObject(4352,3328,256,256,3), 
 	new mapObject(5376,3072,256,256,3), new mapObject(6656,3072,256,256,3), new mapObject(8960,3072,256,256,3), new mapObject(2048,4864,256,256,3),
-	new mapObject(4352,4864,256,256,3), new mapObject(6656,4608,256,256,3), new mapObject(8960,4608,256,256,3));
-}
-function initDealer(){
-	var a = utils.getRandomInteger(0, Intersections.length - 1);
-	theDealer.x = Intersections[a].x + utils.getRandomInteger(30,Intersections[a].width-30);
-	theDealer.y = Intersections[a].y + utils.getRandomInteger(30,Intersections[a].height-30);
+	new mapObject(4352,4864,256,256,3), new mapObject(6656,4608,256,256,3), new mapObject(8960,4608,256,256,3));*/
 }
 function SteeringForce() {
 	this.x = 0;
@@ -142,9 +181,10 @@ function Hobo(x, y) {
 	this.fixDef.shape = new b2CircleShape(0.5);
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
+}
 	
-		
-	
+function PC(x,y) {
+
 }
 	
 Hobo.prototype.draw = function() {
@@ -336,7 +376,34 @@ Hobo.prototype.update = function(name) {
 		}
 	}
 }
+function onImageLoaded() {
+	//hero = new Sprite(imageLoader.images["walker"], canvas.width / 4, canvas.height / 4, 180);
+	
+	//window.addEventListener("keydown", onKeyDown, false);
+	//window.addEventListener("keyup", onKeyUp, false);
+	
+	//update();
+}	
 
+
+function onKeyDown(e) {
+	switch(e.keyCode) {
+		case 69: // E
+			//Player.x,Player.y
+			break;
+		case 37:      //left
+          vr = -3;
+		  //console.log('123');
+          break;
+        case 39:      //right
+          vr = 3;
+          break;
+        case 38:      //up
+          thrust = 0.05;
+          ship.showFlame = true;
+          break;
+	};
+}
 function onKeyUp(e) {
 	switch(e.keyCode) {
 		case 69: // E
@@ -350,12 +417,78 @@ function onKeyUp(e) {
 				state = 1;
 			}
 			break;
+		case 37:      //left
+          vr = 0;
+		  //console.log('123');
+          break;
+        case 39:      //right
+          vr = 0;
+          break;
+        case 38:      //up
+          thrust = 0.0;
+          ship.showFlame = false;
+          break;	
 	};
 }
+
+
 //******************
 //*	   OBJECTS     *
 //******************
 
+
+function map(x,y,h,w,t) {
+	for (var i = 0; i < map.length; ++i) {
+		if (i == 1) {
+			
+		}
+	}
+}
+built = false;
+//1 = building, 2 = vert, 3 = horiz, 4 = inters
+function drawMap(){
+	if (!built) {
+	for (var ii = 0; ii < rows; ii++){
+		for(var kk = 0; kk < cols; kk++){
+			var indexLoc = kk + ii*cols;
+
+			if (map[indexLoc] == 1){
+				//console.log('Hello');
+				Buildings.push(new mapObject(kk*256,ii*256,256,256,1));
+				built = true;
+				//drawTile(kk,ii,"DimGray");						
+				
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));											   
+			}else if (map[indexLoc] == 2) {
+				//drawTile(kk,ii,"Gray");
+				Roads.push(new mapObject(kk*256,ii*256,256,256,2));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 3) {
+				//drawTile(kk,ii,"Gray");
+				Roads.push(new mapObject(kk*256,ii*256,256,256,3));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 4) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*256,ii*256,256,256,4));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}
+				   
+			//if (myPlayer.location == indexLoc) {
+				//drawTile(kk,ii,"red");						
+				
+				//var img = document.getElementById("player");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));		
+				
+				//ctx.translate(x, y)						
+			//}
+		}
+	}
+	}
+}
 
 function mapObject(x, y, h, w, t) {
 	this.x = x;
@@ -406,18 +539,9 @@ mapObject.prototype.draw = function(ox,oy) {
 		else if(this.type == 2) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			var img2=document.getElementById("road_vert");
+			context.drawImage(img2,0,0,this.width, this.height);
 			
-			
-			if(this.height < this.width){
-				//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
-				var img=document.getElementById("road_horiz");
-
-				context.drawImage(img,0,0,this.width, this.height);
-			} else {
-				//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
-				var img2=document.getElementById("road_vert");
-				context.drawImage(img2,0,0,this.width, this.height);
-			}
 			
 			//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			/*context.fillStyle = "rgb(196,196,196)";
@@ -431,58 +555,33 @@ mapObject.prototype.draw = function(ox,oy) {
 		
 			context.fillStyle = "yellow";
 			*/
-			context.fillStyle = "white";
-			if(this.height < this.width){
-				context.translate(0, (this.height/2)-10);
-				var num = Math.floor(this.width/64)
-				var num2 = this.width/num;
-				num = num/2;
-				var num3 = 0;
-				for(var i=0; i < num; ++i) {
-					context.beginPath();
-					context.fillRect(num3,0,num2, 10);
-					num3 = num3 + num2*2
-					context.closePath();
-				}
-			}
-			else {
-				context.translate((this.width/2)-10, 0);
-				var num = Math.floor(this.height/64)
-				var num2 = this.height/num;
-				num = num/2;
-				var num3 = 0;
-				for(var i=0; i < num; ++i) {
-					context.beginPath();
-					context.fillRect(0,num3, 10, num2);
-					num3 = num3 + num2*2
-					context.closePath();
-				}				
-			}
+			//context.fillStyle = "white";
 			
+			/*context.translate(0, (this.height/2)-10);
+			var num = Math.floor(this.width/64)
+			var num2 = this.width/num;
+			num = num/2;
+			var num3 = 0;
+			for(var i=0; i < num; ++i) {
+				context.beginPath();
+				context.fillRect(num3,0,num2, 10);
+				num3 = num3 + num2*2
+				context.closePath();
+			}*/
+
+			context.restore();
+		}else if(this.type == 3) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			var img=document.getElementById("road_horiz");
+			context.drawImage(img,0,0,this.width, this.height);
 			context.restore();
 		}
-		else if(this.type == 3) {
+		else if(this.type == 4) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			var img=document.getElementById("inters");
 			context.drawImage(img,0,0);
-			/*context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
-			context.fillStyle = "yellow";
-			context.beginPath();
-			context.moveTo(0,0);
-			context.lineTo(this.width, 0);
-			context.lineTo(this.width, this.height);
-			context.lineTo(0, this.height);
-			context.closePath();
-			context.fill();
-			context.fillStyle = "rgb(196,196,196)";
-			context.beginPath();
-			context.moveTo(20,20);
-			context.lineTo(this.width - 20,20);
-			context.lineTo(this.width - 20, this.height - 20);
-			context.lineTo(20, this.height - 20);
-			context.closePath();
-			context.fill();*/
 			context.restore();
 		}
 	
@@ -649,7 +748,15 @@ init();
 
 //var spawner = new spawnController();
 //spawner.initWorld();
+		  ship = new Ship(),
+          vr = 0,
+          vx = 0,
+          vy = 0,
+          thrust = 0,
+          friction = .995;
 
+		  ship.x = canvas.width / 2;
+		  ship.y = canvas.height / 2;
 var gameState = 1;
 (function tick() {
 	if(gameState == 0) {
@@ -657,10 +764,13 @@ var gameState = 1;
 		
 	}
 	if(gameState == 1) {
+		
 		world.Step((1/60),10,10);
-		
+
 		context.clearRect(0, 0, canvas.width, canvas.height);
-		
+		  
+
+		drawMap();
 		for(var i = 0; i < Buildings.length; ++i) {
 			Buildings[i].update();
 			Buildings[i].draw(Player.x,Player.y);
@@ -683,13 +793,18 @@ var gameState = 1;
 			agent.draw(Player.x, Player.y);
 		}
 		
+
+        
+		
 		Player.update();
 		Player.draw();
 		
 		//Car.update();
 		//Car.draw();
-		
-		context.save();
+		//ship.draw();
+		//context.save();
+		ship.update(context);
+		ship.draw(context);
 		
 		//console.log(state);
 
@@ -713,5 +828,6 @@ var gameState = 1;
 	}
 	
 })();
-
+imageLoader.queueImage("car");
+imageLoader.loadQueuedImages(onImageLoaded);
 </script></body></html>
