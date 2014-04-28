@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>Hobo Survival</title>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
 <style>
 	body { 
 		background-color:#000;
@@ -24,7 +24,15 @@ imageLoader.queueImage("player");
 imageLoader.queueImage("building");
 imageLoader.queueImage("road_horiz");
 imageLoader.queueImage("road_vert");
-imageLoader.queueImage("inters");
+imageLoader.queueImage("inters0");
+imageLoader.queueImage("inters1");
+imageLoader.queueImage("inters2");
+imageLoader.queueImage("inters3");
+imageLoader.queueImage("inters4");
+imageLoader.queueImage("inters5");
+imageLoader.queueImage("inters6");
+imageLoader.queueImage("inters7");
+imageLoader.queueImage("inters8");
 imageLoader.queueImage("mapM2");
 imageLoader.loadQueuedImages(tick);
 
@@ -89,7 +97,43 @@ var tileSize = 256;
 //1 = building, 2 = vert, 3 = horiz, 4 = inters
 var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,4,3,3,4,3,3,3,3,3,4,1,1,1,
+1,1,1,7,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,8,1,1,1,1,7,3,3,12,3,3,12,3,3,8,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,6,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,11,3,3,3,3,6,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,3,3,10,12,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,7,3,3,3,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,6,3,12,3,10,3,12,3,5,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,10,3,3,6,1,1,2,1,1,1,
+1,1,1,1,1,11,3,3,3,9,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,11,3,3,3,12,3,3,3,12,3,10,3,3,3,3,11,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,6,8,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,11,3,3,3,11,3,3,3,6,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,3,6,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,7,3,10,12,3,3,12,3,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
+1,1,1,7,3,10,3,3,12,10,3,12,3,10,3,3,6,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,6,8,1,1,1,2,1,1,6,8,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,11,3,11,3,10,3,3,3,3,11,3,3,12,3,10,3,3,3,3,6,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,11,3,3,12,3,10,12,3,3,10,12,3,3,11,3,3,3,6,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,11,3,3,3,3,3,6,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,6,3,6,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,11,3,3,3,3,3,3,6,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,6,3,3,8,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,6,3,3,10,3,3,10,3,3,3,5,1,1,1,1,1,6,3,3,10,3,3,3,3,3,3,10,3,3,10,3,3,3,3,3,3,10,3,3,3,3,3,10,3,3,5,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+
+/* // Old Map
+var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,7,3,3,3,4,3,3,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,4,3,3,4,3,3,3,3,3,4,1,1,1,
 1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
 1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,3,3,4,1,1,2,1,1,2,1,1,2,1,1,1,
 1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
@@ -120,7 +164,7 @@ var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,4,3,3,4,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
 1,1,1,4,3,3,4,3,3,4,3,3,3,4,1,1,1,1,1,4,3,3,4,3,3,3,3,3,3,4,3,3,4,3,3,3,3,3,3,4,3,3,3,3,3,4,3,3,4,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];*/
 
 
 function init(){
@@ -175,7 +219,7 @@ function Hobo(x, y) {
 	this.count3 = 1700;
 	//begin initialization of BOX2D object
 	
-	/*this.fixDef = new b2FixtureDef;
+	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 5.0;
 	this.fixDef.friction = 1;
 	this.fixDef.restitution = 0.00;
@@ -187,12 +231,12 @@ function Hobo(x, y) {
 	this.fixDef.shape = new b2CircleShape(0.5);
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	*/
+	
 	
 	///
 	
 	
-		this.fixDef = new b2FixtureDef;
+		/*this.fixDef = new b2FixtureDef;
 		this.fixDef.density = 5.0;
 		this.fixDef.friction = 1;
 		this.fixDef.restitution = 0;
@@ -205,7 +249,7 @@ function Hobo(x, y) {
 		//this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
 		this.fixDef.shape.SetAsBox(this.width/SCALE,this.height/SCALE);
 		this.Body = world.CreateBody(this.bodyDef);
-		this.Body.CreateFixture(this.fixDef);
+		this.Body.CreateFixture(this.fixDef);*/
 	
 	
 	
@@ -508,7 +552,7 @@ function drawMap(){
 
 			if (map[indexLoc] == 1){
 				//console.log('Hello');
-				Buildings.push(new mapObject(kk*tileSize,ii*tileSize,256,256,1));
+				Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,1));
 				built = true;
 				//drawTile(kk,ii,"DimGray");						
 				
@@ -516,20 +560,61 @@ function drawMap(){
 				//ctx.drawImage(img, (kk * 32), (ii * 32));											   
 			}else if (map[indexLoc] == 2) {
 				//drawTile(kk,ii,"Gray");
-				Roads.push(new mapObject(kk*tileSize,ii*tileSize,256,256,2));
+				Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,2));
 				//var img = document.getElementById("floor");
 				//ctx.drawImage(img, (kk * 32), (ii * 32));						
 			}else if (map[indexLoc] == 3) {
 				//drawTile(kk,ii,"Gray");
-				Roads.push(new mapObject(kk*tileSize,ii*tileSize,256,256,3));
+				Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,3));
 				//var img = document.getElementById("floor");
 				//ctx.drawImage(img, (kk * 32), (ii * 32));						
 			}else if (map[indexLoc] == 4) {
 				//drawTile(kk,ii,"Gray");
-				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,256,256,4));
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,4));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 5) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,5));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 6) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,6));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 7) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,7));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 8) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,8));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 9) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,9));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 10) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,10));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 11) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,11));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 12) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,12));
 				//var img = document.getElementById("floor");
 				//ctx.drawImage(img, (kk * 32), (ii * 32));						
 			}
+			
 				   
 			//if (myPlayer.location == indexLoc) {
 				//drawTile(kk,ii,"red");						
@@ -591,8 +676,7 @@ mapObject.prototype.draw = function(ox,oy) {
 			context.closePath();
 			context.fill();*/
 			context.restore();
-		}	
-		else if(this.type == 2) {
+		}	else if(this.type == 2) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			//var img2=document.getElementById("road_vert");
@@ -626,18 +710,58 @@ mapObject.prototype.draw = function(ox,oy) {
 			}*/
 
 			context.restore();
-		}else if(this.type == 3) {
+		}	else if(this.type == 3) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			//var img=document.getElementById("road_horiz");
 			context.drawImage(imageLoader.images["road_horiz"],0,0,this.width, this.height);
 			context.restore();
-		}
-		else if(this.type == 4) {
+		}	else if(this.type == 4) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			//var img=document.getElementById("inters");
-			context.drawImage(imageLoader.images["inters"],0,0);
+			context.drawImage(imageLoader.images["inters0"],0,0);
+			context.restore();
+		}	else if(this.type == 5) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img=document.getElementById("inters");
+			context.drawImage(imageLoader.images["inters1"],0,0);
+			context.restore();
+		}	else if(this.type == 6) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters2"],0,0);
+			context.restore();
+		}	else if(this.type == 7) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters3"],0,0);
+			context.restore();
+		}	else if(this.type == 8) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters4"],0,0);
+			context.restore();
+		}	else if(this.type == 9) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters5"],0,0);
+			context.restore();
+		}	else if(this.type == 10) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters6"],0,0);
+			context.restore();
+		}	else if(this.type == 11) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters7"],0,0);
+			context.restore();
+		}	else if(this.type == 12) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters8"],0,0);
 			context.restore();
 		}
 	
