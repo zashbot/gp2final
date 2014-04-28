@@ -3,10 +3,10 @@
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
 <style>
 	body { 
-		background-color:#000;
+		background-color:white;
 	}
 	# canvas {
-		background-color:#FFF;
+		background-color:black;
 	}
 </style>
 </head><body>
@@ -18,6 +18,7 @@
 <script src="./scripts/box2d.js"></script>
     <script src="./scripts/ship.js"></script>
 <script>
+console.log('start');
 imageLoader.queueImage("car");
 imageLoader.queueImage("car2");
 imageLoader.queueImage("player");
@@ -33,8 +34,13 @@ imageLoader.queueImage("inters5");
 imageLoader.queueImage("inters6");
 imageLoader.queueImage("inters7");
 imageLoader.queueImage("inters8");
-imageLoader.queueImage("mapM2");
+//imageLoader.queueImage("mapM2");
+imageLoader.queueImage("spritesheet");
+
+
 imageLoader.loadQueuedImages(tick);
+
+console.log('done!');
 
 var REFMULTI = 2; //1= 120hz 2 =60hz
 
@@ -91,6 +97,10 @@ window.addEventListener("keyup", function(e) {
 }, false);
 window.addEventListener("keyup", onKeyUp, false);
 window.addEventListener("keydown", onKeyDown, false);
+
+var mapWidth = 2560;
+var mapHeight = 2560;
+
 var cols = 52;
 var rows = 34;
 var tileSize = 256;
@@ -534,17 +544,11 @@ function onKeyUp(e) {
 //*	   OBJECTS     *
 //******************
 
-
-function map(x,y,h,w,t) {
-	for (var i = 0; i < map.length; ++i) {
-		if (i == 1) {
-			
-		}
-	}
-}
+drawn = false;
 built = false;
 //1 = building, 2 = vert, 3 = horiz, 4 = inters
 function drawMap(){
+	
 	if (!built) {
 	for (var ii = 0; ii < rows; ii++){
 		for(var kk = 0; kk < cols; kk++){
@@ -627,8 +631,28 @@ function drawMap(){
 		}
 	}
 	}
-	
-}
+		/*if (!drawn) {	
+			Roads.push(new mapObject(0,0,3328,2176,20));
+			Roads.push(new mapObject(3328,0,3328,2176,21));
+			Roads.push(new mapObject(6656,0,3328,2176,22));
+			Roads.push(new mapObject(9984,0,3328,2176,23));
+			Roads.push(new mapObject(0,2176,3328,2176,24));
+			Roads.push(new mapObject(3328,2176,3328,2176,25));
+			Roads.push(new mapObject(6656,2176,3328,2176,26));
+			Roads.push(new mapObject(9984,2176,3328,2176,27));
+			Roads.push(new mapObject(0,4352,3328,2176,28));
+			Roads.push(new mapObject(3328,4352,3328,2176,29));
+			Roads.push(new mapObject(6656,4352,3328,2176,30));
+			Roads.push(new mapObject(9984,4352,3328,2176,31));
+			console.log('last 4 objects');
+			Roads.push(new mapObject(0,6528,3328,2176,32));
+			Roads.push(new mapObject(3328,6528,3328,2176,33));
+			Roads.push(new mapObject(6656,6528,3328,2176,34));
+			Roads.push(new mapObject(9984,6528,3328,2176,35));
+			//console.log('drawing');
+			drawn=true;
+		}*/
+	}
 
 function mapObject(x, y, h, w, t) {
 	this.x = x;
@@ -660,23 +684,23 @@ function mapObject(x, y, h, w, t) {
 	
 }
 
+doneDraw = false;
 mapObject.prototype.draw = function(ox,oy) {
 	
+
 		if(this.type == 1) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			//var img=document.getElementById("building");
-			context.drawImage(imageLoader.images["building"],0,0, this.width, this.height);
-			/*context.fillStyle = "rgb(89,71,71)";
-			context.beginPath();
-			context.moveTo(-1,-1);
-			context.lineTo(this.width+1, -1);
-			context.lineTo(this.width+1, this.height+1);
-			context.lineTo(-1, this.height+1);
-			context.closePath();
-			context.fill();*/
+			
+			//context.drawImage(imageLoader.images["building"],0,0, this.width, this.height);
+			//context.drawImage(imageLoader.images["building"],0,0, this.width, this.height);
+			context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 1*tileSize, tileSize, tileSize, this.width, this.height, this.width, this.height);
+			
 			context.restore();
-		}	else if(this.type == 2) {
+		}
+		
+		else if(this.type == 2) {
 			context.save();
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			//var img2=document.getElementById("road_vert");
@@ -708,7 +732,7 @@ mapObject.prototype.draw = function(ox,oy) {
 				num3 = num3 + num2*2
 				context.closePath();
 			}*/
-
+			
 			context.restore();
 		}	else if(this.type == 3) {
 			context.save();
@@ -763,12 +787,93 @@ mapObject.prototype.draw = function(ox,oy) {
 			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 			context.drawImage(imageLoader.images["inters8"],0,0);
 			context.restore();
-		}
-	
-	
+		} 
+		/*if(this.type == 20) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map1"],0,0);
+			context.restore();
+		} else if(this.type == 21) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map2"],0,0);
+			context.restore();
+		} else if(this.type == 22) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map3"],0,0);
+			context.restore();
+		} else if(this.type == 23) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map4"],0,0);
+			context.restore();
+		} else if(this.type == 24) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map5"],0,0);
+			context.restore();
+		} else if(this.type == 25) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map6"],0,0);
+			context.restore();
+		} else if(this.type == 26) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map7"],0,0);
+			context.restore();
+		} else if(this.type == 27) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map8"],0,0);
+			context.restore();
+		} else if(this.type == 28) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map9"],0,0);
+			context.restore();
+		} else if(this.type == 29) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map10"],0,0);
+			context.restore();
+		} else if(this.type == 30) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map11"],0,0);
+			context.restore();
+		} else if(this.type == 31) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map12"],0,0);
+			context.restore();
+		} else if(this.type == 32) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map13"],0,0);
+			context.restore();
+			//console.log('last 4 images');
+		} else if(this.type == 33) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map14"],0,0);
+			context.restore();
+		} else if(this.type == 34) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map15"],0,0);
+			context.restore();
+		} else if(this.type == 35) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map16"],0,0);
+			context.restore();
+		}*/
 }
 
 mapObject.prototype.update = function() {
+		//drawn;
 
 }
 
@@ -939,30 +1044,28 @@ function tick() {
 	if(gameState == 1) {
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		world.Step((1/60),10,10);
-
 		
-		  
-
 		drawMap();
+		
 		for(var i = 0; i < Buildings.length; ++i) {
-			Buildings[i].update();
+			//Buildings[i].update();
 			Buildings[i].draw(Player.x,Player.y);
 		}
 		for(var i = 0; i < Roads.length; ++i) {
-			Roads[i].update();
+			//Roads[i].update();
 			Roads[i].draw(Player.x,Player.y);
 		}
 		for(var i = 0; i < Intersections.length; ++i) {
-			Intersections[i].update();
+			//Intersections[i].update();
 			Intersections[i].draw(Player.x,Player.y);
 		}
 		for(var i = 0; i < Pickups.length; ++i) {
-			Pickups[i].update();
+			//Pickups[i].update();
 			Pickups[i].draw(Player.x,Player.y);
 		}
 		for(var i = 0; i < Agents.length; ++i) {
 			var agent = Agents[i];
-			agent.update();
+			//agent.update();
 			agent.draw(Player.x, Player.y);
 		}
 		
@@ -981,7 +1084,7 @@ function tick() {
 
 		requestAnimationFrame(tick);
 	}
-	if(gameState == 3) {
+	/*if(gameState == 3) {
 		context.save();
 		context.fillStyle = "black";
 		context.globalAlpha = 0.5;
@@ -996,7 +1099,7 @@ function tick() {
 		context.fillText("You picked up $" + dollars + "." + cents, canvas.width/2 - 140, 240);
 		context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
 		context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
-	}
+	}*/
 	
 }
 
