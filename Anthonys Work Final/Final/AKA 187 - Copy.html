@@ -475,8 +475,6 @@ function onImageLoaded() {
 	
 	//update();
 }	
-
-
 function onKeyDown(e) {
 	switch(e.keyCode) {
 		case 69: // E
@@ -571,7 +569,6 @@ Car.prototype.update = function() {
 	
 	}
 		
-		
 }
 function Tire() {
 	this.maxForwardSpeed = 100;
@@ -608,7 +605,7 @@ Tire.prototype.update = function(isFront) {
 		}	
 		this.Body.ApplyTorque(desiredTorque);
 	}
-	else{
+	else {
 		var desiredSpeed = 0;
 		if(chars.indexOf(83) > -1) { //S
 			desiredSpeed = -20
@@ -616,7 +613,19 @@ Tire.prototype.update = function(isFront) {
 		else if(chars.indexOf(87) > -1) { //W
 			desiredSpeed = 100
 		}
-		
+		var vector = this.Body.GetWorldVector(new b2Vec2(0,1));
+		var currentSpeed = Box2D.Common.Math.b2Math.Dot(this.getForwardVelocity(), vector);
+		var force = 0;
+		if(desiredSpeed > currentSpeed){
+			force = this.maxDriveForce;
+		}
+		else if(desiredSpeed<currentSpeed){
+			force = -this.maxDriveForce;
+		}
+		else {
+			return;
+		}
+		this.Body.ApplyForce(force * vector, this.Body.GetWorldCenter());
 	}
 }	
 Tire.prototype.getMaxGripForce = function(){
@@ -627,7 +636,7 @@ Tire.prototype.getMaxGripForce = function(){
 	currentRightNormal.Multiply(dot*this.body.GetMass()*-1);
 	return currentRightNormal;
 }
-Tire.prototype.getForwardVelocity= function(){
+Tire.prototype.getForwardVelocity = function(){
 	var vector = new b2Vec2(0,1)
 	var currentForwardNormal = this.Body.GetWorldVector(vector);
 	return Box2D.Common.Math.b2Math.Dot(currentForwardNormal, this.Body.GetLinearVelocity())*currentForwardNormal;
