@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
+<style>
+	body { 
+		background-color:white;
+	}
+	# canvas {
+		background-color:black;
+	}
+</style>
+</head><body>
+<center>
+<canvas id="gameCanvas" width="1280" height="800"></canvas>
+</center>
+<script src="./scripts/utils.js"></script>
+<script src="./scripts/imageLoader.js"></script>
+<script src="./scripts/box2d.js"></script>
+    <script src="./scripts/ship.js"></script>
+<script>
+console.log('start');
+imageLoader.queueImage("car");
+imageLoader.queueImage("car2");
+imageLoader.queueImage("player");
+imageLoader.queueImage("building");
+imageLoader.queueImage("road_horiz");
+imageLoader.queueImage("road_vert");
+imageLoader.queueImage("inters0");
+imageLoader.queueImage("inters1");
+imageLoader.queueImage("inters2");
+imageLoader.queueImage("inters3");
+imageLoader.queueImage("inters4");
+imageLoader.queueImage("inters5");
+imageLoader.queueImage("inters6");
+imageLoader.queueImage("inters7");
+imageLoader.queueImage("inters8");
+//imageLoader.queueImage("mapM2");
+imageLoader.queueImage("spritesheet");
+
+
+imageLoader.loadQueuedImages(tick);
+
+console.log('done!');
+
+var REFMULTI = 2; //1= 120hz 2 =60hz
+
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+var mouse = utils.captureMouse(canvas);
+
+//box2d stuff
+var SCALE = 30;
+//var SCALE2 = 15;
+
+var world;
+var b2Vec2 = Box2D.Common.Math.b2Vec2;
+var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+var b2Body = Box2D.Dynamics.b2Body;
+var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+var b2Fixture = Box2D.Dynamics.b2Fixture;
+var b2RevoluteJoint = Box2D.Dynamics.Joints.b2RevoluteJoint;
+var b2RevoluteJointDef = Box2D.Dynamics.Joints.b2RevoluteJointDef;
+var b2WeldJoint = Box2D.Dynamics.Joints.b2WeldJoint;
+var b2WeldJointDef = Box2D.Dynamics.Joints.b2WeldJointDef;
+var b2World = Box2D.Dynamics.b2World;
+var b2MassData = Box2D.Collision.Shapes.b2MassData;
+var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+var b2AABB = Box2D.Collision.b2AABB;
+var b2WorldManifold = Box2D.Collision.b2WorldManifold;
+var b2ManifoldPoint = Box2D.Collision.b2ManifoldPoint;
+var b2RayCastInput = Box2D.Collision.b2RayCastInput;
+var b2RayCastOutput = Box2D.Collision.b2RayCastOutput;
+var b2Listener = Box2D.Dynamics.b2ContactListener;
+
+world = new b2World(new b2Vec2(0,0), true);
+
+var Player = new Hobo(900,600);
+//var Car = new Hobo(1000,1664);
+
+var Agents = [];
+var Pickups = [];
+var Buildings = [];
+var Roads = [];
+var Intersections = [];
+var chars = [];
+var cars = [];
+
+var state = 1;
+
+window.addEventListener("keydown", function(e) {
+	if(chars.indexOf(e.keyCode) == -1) {
+		chars.push(e.keyCode);
+		//console.log(chars.toString());
+	}
+}, false);
+window.addEventListener("keyup", function(e) {
+	var index = chars.indexOf(e.keyCode);
+	chars.splice(index, 1);
+}, false);
+window.addEventListener("keyup", onKeyUp, false);
+window.addEventListener("keydown", onKeyDown, false);
+
+var mapWidth = 2560;
+var mapHeight = 2560;
+
+var cols = 52;
+var rows = 34;
+var tileSize = 256;
+//1 = building, 2 = vert, 3 = horiz, 4 = inters
+var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,7,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,8,1,1,1,1,7,3,3,12,3,3,12,3,3,8,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,6,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,11,3,3,3,3,6,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,3,3,10,12,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,7,3,3,3,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,6,3,12,3,10,3,12,3,5,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,10,3,3,6,1,1,2,1,1,1,
+1,1,1,1,1,11,3,3,3,9,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,11,3,3,3,12,3,3,3,12,3,10,3,3,3,3,11,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,6,8,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,11,3,3,3,11,3,3,3,6,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,3,6,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,7,3,10,12,3,3,12,3,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
+1,1,1,7,3,10,3,3,12,10,3,12,3,10,3,3,6,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,6,8,1,1,1,2,1,1,6,8,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,11,3,11,3,10,3,3,3,3,11,3,3,12,3,10,3,3,3,3,6,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,11,3,3,12,3,10,12,3,3,10,12,3,3,11,3,3,3,6,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,11,3,3,3,3,3,6,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,6,3,6,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,11,3,3,3,3,3,3,6,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,6,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,6,3,3,8,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,6,3,3,10,3,3,10,3,3,3,5,1,1,1,1,1,6,3,3,10,3,3,3,3,3,3,10,3,3,10,3,3,3,3,3,3,10,3,3,3,3,3,10,3,3,5,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+
+/* // Old Map
+var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,7,3,3,3,4,3,3,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,4,3,3,4,3,3,3,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,3,3,4,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,3,3,4,3,3,3,3,4,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,3,3,3,4,3,3,3,3,3,4,3,3,3,3,4,4,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,2,1,1,1,4,3,3,3,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,4,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,2,3,4,3,4,3,3,3,4,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,4,3,3,4,1,1,2,1,1,1,
+1,1,1,1,1,2,3,3,3,4,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,4,3,3,3,4,3,3,3,4,3,3,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,4,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,1,1,1,1,1,1,4,3,3,3,3,4,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,4,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,1,1,2,3,3,3,4,3,3,3,4,1,1,1,1,4,1,1,1,1,1,2,1,1,1,4,4,3,3,3,3,4,3,3,3,3,4,3,3,3,3,3,4,1,1,2,1,1,1,
+1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,4,3,4,4,3,3,4,3,4,3,3,3,2,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,4,3,3,4,1,1,1,
+1,1,1,2,3,4,3,3,4,4,3,4,3,4,3,3,4,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,4,4,1,1,1,2,1,1,4,4,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,4,3,4,3,4,3,3,3,3,4,3,3,4,3,4,3,3,3,3,4,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,4,3,3,4,3,4,4,3,3,4,4,3,3,4,3,3,3,4,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,4,3,3,3,3,3,4,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,4,3,4,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,4,3,3,3,3,3,3,4,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,3,3,3,3,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,4,3,3,4,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
+1,1,1,4,3,3,4,3,3,4,3,3,3,4,1,1,1,1,1,4,3,3,4,3,3,3,3,3,3,4,3,3,4,3,3,3,3,3,3,4,3,3,3,3,3,4,3,3,4,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];*/
+
+
+function SteeringForce() {
+	this.x = 0;
+	this.y = 0;
+}
+
+
+
+//******************
+//*	    ACTORS     *
+//******************
+
+//the Hobo, our loveable little playable character who must collect change to live.
+function Hobo(x, y) {
+	this.x = x;
+	this.y = y;
+	this.height = 15;
+	this.width = 15;
+	this.orientation = 0;
+	this.wallet = 0;
+	this.moneyCollected = 0;
+	this.crackSmoked = 0;
+	this.slowAmount = 0;
+	this.smokedCrack = false;	
+	
+	this.count1 = 0;
+	this.maxCount = 2500
+	this.count2 = this.maxCount;
+	this.count3 = 1700;
+	//begin initialization of BOX2D object
+	
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 1;
+	this.fixDef.restitution = 0.00;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 1.0;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	
+	
+	
+	
+	
+		/*this.fixDef = new b2FixtureDef;
+		this.fixDef.density = 5.0;
+		this.fixDef.friction = 1;
+		this.fixDef.restitution = 0;
+		this.bodyDef = new b2BodyDef;
+		this.bodyDef.type = b2Body.b2_dynamicBody;
+		this.bodyDef.position.x = this.x / SCALE;
+		this.bodyDef.position.y = this.y / SCALE;
+		this.bodyDef.linearDamping = 1.0;
+		this.fixDef.shape = new b2PolygonShape();
+		//this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
+		this.fixDef.shape.SetAsBox(this.width/SCALE,this.height/SCALE);
+		this.Body = world.CreateBody(this.bodyDef);
+		this.Body.CreateFixture(this.fixDef);*/
+	
+	
+	
+}
+	
+Hobo.prototype.draw = function() {
+	//draw hobo
+	
+	context.save();
+	
+	context.translate(canvas.width/2, canvas.height/2);
+	context.rotate(this.orientation + (Math.PI/2));
+	
+	/*context.lineWidth="4";
+	context.strokeStyle="red";
+	context.rect(-this.width/2,-this.height/2,this.width, this.height);
+	context.stroke();
+	context.rect(-this.width/2,-this.height/2, 5, 10);
+	context.stroke();
+	*/
+	//console.log(this.x);
+	
+	/*context.beginPath();
+	context.fillStyle = "red"
+	context.arc(0,0, 15, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath()
+	context.beginPath()
+	context.fillStyle = "black"
+	context.moveTo(1,0);
+	context.lineTo(1,16);
+	context.lineTo(-1,16);
+	context.lineTo(-1,0);
+	context.closePath();
+	context.fill();*/
+	
+	if (state == 1) {
+		//var img=document.getElementById("car");
+		//context.drawImage(img,-16,-32);
+		context.drawImage(imageLoader.images["car2"],-16,-32);
+	} else {
+		//var img=document.getElementById("player");
+		context.drawImage(imageLoader.images["player"],-16,-16);
+	}
+	
+	
+	context.restore();
+
+}
+
+Hobo.prototype.update = function(name) {
+	
+	if (state == 1) {	
+		
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -1;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -1;
+				force.y = 0;
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = 1;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = 1;
+				force.y = 0;
+			}
+			/*else if (chars[0] == 69) { //E
+				if (state == 1) {
+					state = 0;
+				} else if (state == 0) {
+					state = 1;
+				}
+			}*/
+
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = 1;//0.75;
+				force.y = -1;//-0.75;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = 1;//0.75;
+				force.y = 1;//0.75;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -1;//-0.75;
+				force.y = 1;//0.75;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -1;//-0.75;
+				force.y = -1;//-0.75;
+			}
+			if (chars.indexOf(32) > -1)
+			{
+				if(this.smokedCrack == false && this.wallet >= 200 && utils.getDistance(this.x, this.y, theDealer.x, theDealer.y) < 150){
+					this.smokedCrack = true;
+					this.crackSmoked++;
+					this.count1 = 0;
+					this.count2 = this.maxCount;
+					this.count3 = 1700;
+				}
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+		//console.log(vel.y);
+		//var speed = vel.Normalize();
+		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
+		//console.log(speed);
+		//console.log(vel.x);
+		//console.log(vel.y);
+		//update where our hobo is on screen
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		
+		if (vel.x >= 25) {
+			vel.x = 25;
+		}
+		if (vel.x <= -25) {
+			vel.x = -25;
+		}
+		if (vel.y >= 25) {
+			vel.y = 25;
+		}
+		if (vel.y <= -25) {
+			vel.y = -25;
+		}
+	} else {
+		
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -1;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -1;
+				force.y = 0;
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = 1;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = 1;
+				force.y = 0;
+			}
+			/*else if (chars[0] == 69) { //E
+				if (state == 1) {
+					state = 0;
+				} else if (state == 0) {
+					state = 1;
+				}
+			}*/
+
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = 0.5;
+				force.y = -0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = 0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -0.5;
+				force.y = -0.5;
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+		
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+		//var speed = vel.Normalize();
+		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
+		//console.log(speed);
+		//console.log(vel.x);
+		//console.log(vel.y);
+		//update where our hobo is on screen
+		
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		
+		if (vel.x >= 7) {
+			vel.x = 7;
+		}
+		if (vel.x <= -7) {
+			vel.x = -7;
+		}
+		if (vel.y >= 7) {
+			vel.y = 7;
+		}
+		if (vel.y <= -7) {
+			vel.y = -7;
+		}
+	}
+}
+function onImageLoaded() {
+	//hero = new Sprite(imageLoader.images["walker"], canvas.width / 4, canvas.height / 4, 180);
+	
+	//window.addEventListener("keydown", onKeyDown, false);
+	//window.addEventListener("keyup", onKeyUp, false);
+	
+	//update();
+}	
+
+
+function onKeyDown(e) {
+	switch(e.keyCode) {
+		case 69: // E
+
+			break;
+		case 37:      //left
+
+
+          break;
+        case 39:      //right
+
+          break;
+        case 38:      //up
+
+          break;
+		case 40:      //Down
+
+
+          break;
+	};
+}
+function onKeyUp(e) {
+	switch(e.keyCode) {
+		case 69: // E
+			if (state == 1) {
+				state = 0;
+			} else if (state == 0) {
+				state = 1;
+			}
+			break;
+		case 37:      //left
+
+          break;
+        case 39:      //right
+
+          break;
+        case 38:      //up
+
+          break;
+		case 40:      //Down
+
+          break;		  
+	};
+}
+
+
+//******************
+//*	   OBJECTS     *
+//******************
+
+function Car(x, y) {
+	this.x = x;
+	this.y = y;
+	this.state = 1;
+	this.orientation = 0;
+	this.maxForwardSpeed = 3;
+	this.maxReverseSpeed = 1;
+	//ok lets make a car
+	//the body
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 1;
+	this.fixDef.restitution = 0.00;
+	this.fixDef.shape = new b2PolygonShape(3, 6);
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	this.Body.SetUserData(this);
+	//the tires
+	this.lft = new Tire;
+	this.rft = new Tire;
+	this.lrt = new Tire;
+	this.rrt = new Tire;
+	this.tires = [lft,rft,lrt,rrt];
+	
+	
+	
+	
+}
+Car.prototype.update = function() {
+	if(this.state) {
+		//update how to draw the sprite
+		this.x = this.bodyDef.position.x;
+		this.y = this.bodyDef.position.y;
+		this.orientation = this.bodyDef.angle
+	}
+	
+	else {
+	
+	}
+		
+		
+}
+function Tire() {
+	this.maxForwardSpeed = 100;
+	this.maxReverseSpeed = -20;
+	this.maxDriveForce = 100;
+	this.maxLateralImpulse = 3;
+	//lets make a tire
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 1;
+	this.fixDef.restitution = 0.00;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.fixDef.shape = new b2PolygonShape(0.25, 0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	this.Body.SetUserData(this);
+}
+Tire.prototype.update = function(isFront) {
+	
+	var impulse = this.getMaxGripForce();
+	if(impulse.Length() > this.maxLateralImpulse){
+		impulse *= this.maxLateralImpulse / impulse.Length();
+	}
+	this.Body.ApplyLinearImpulse(impulse, this.Body.GetWorldCenter());
+	
+	if(isFront) {
+		var desiredTorque = 0;
+		if (chars.indexOf(65) > -1 ) { //A
+			desiredTorque = -15;
+		}
+		else if (chars.indexOf(68) > -1) { //D
+			desiredTorque = 15;
+		}	
+		this.Body.ApplyTorque(desiredTorque);
+	}
+	else{
+		var desiredSpeed = 0;
+		if(chars.indexOf(83) > -1) { //S
+			desiredSpeed = -20
+		}
+		else if(chars.indexOf(87) > -1) { //W
+			desiredSpeed = 100
+		}
+		
+	}
+}	
+Tire.prototype.getMaxGripForce = function(){
+	var vector = new b2Vec2(1,0);
+	var currentRightNormal = this.Body.GetWorldVector(vector);
+	var linearVel = this.Body.GetLinearVelocity();
+	var dot = Box2D.Common.Math.b2Math.Dot(currentRightNormal, linearVel);
+	currentRightNormal.Multiply(dot*this.body.GetMass()*-1);
+	return currentRightNormal;
+}
+Tire.prototype.getForwardVelocity= function(){
+	var vector = new b2Vec2(0,1)
+	var currentForwardNormal = this.Body.GetWorldVector(vector);
+	return Box2D.Common.Math.b2Math.Dot(currentForwardNormal, this.Body.GetLinearVelocity())*currentForwardNormal;
+}
+
+Car.prototype.draw = function() {
+		context.save();
+		context.translate(canvas.width/2, canvas.height/2);
+		context.rotate(this.orientation + (Math.PI/2));
+	if (this.state) { //if a player is in the car
+		context.drawImage(imageLoader.images["car2"],-16,-32);
+	}
+	else { //if not used by the player
+		
+	}
+}
+
+drawn = false;
+built = false;
+//1 = building, 2 = vert, 3 = horiz, 4 = inters
+function drawMap(){
+	
+	if (!built) {
+	for (var ii = 0; ii < rows; ii++){
+		for(var kk = 0; kk < cols; kk++){
+			var indexLoc = kk + ii*cols;
+
+			if (map[indexLoc] == 1){
+				//console.log('Hello');
+				Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,1));
+				built = true;
+				//drawTile(kk,ii,"DimGray");						
+				
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));											   
+			}else if (map[indexLoc] == 2) {
+				//drawTile(kk,ii,"Gray");
+				Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,2));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 3) {
+				//drawTile(kk,ii,"Gray");
+				Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,3));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 4) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,4));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 5) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,5));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 6) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,6));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 7) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,7));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 8) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,8));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 9) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,9));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 10) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,10));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 11) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,11));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}else if (map[indexLoc] == 12) {
+				//drawTile(kk,ii,"Gray");
+				Intersections.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,12));
+				//var img = document.getElementById("floor");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));						
+			}
+			
+				   
+			//if (myPlayer.location == indexLoc) {
+				//drawTile(kk,ii,"red");						
+				
+				//var img = document.getElementById("player");
+				//ctx.drawImage(img, (kk * 32), (ii * 32));		
+				
+				//ctx.translate(x, y)						
+			//}
+		}
+	}
+	}
+		/*if (!drawn) {	
+			Roads.push(new mapObject(0,0,3328,2176,20));
+			Roads.push(new mapObject(3328,0,3328,2176,21));
+			Roads.push(new mapObject(6656,0,3328,2176,22));
+			Roads.push(new mapObject(9984,0,3328,2176,23));
+			Roads.push(new mapObject(0,2176,3328,2176,24));
+			Roads.push(new mapObject(3328,2176,3328,2176,25));
+			Roads.push(new mapObject(6656,2176,3328,2176,26));
+			Roads.push(new mapObject(9984,2176,3328,2176,27));
+			Roads.push(new mapObject(0,4352,3328,2176,28));
+			Roads.push(new mapObject(3328,4352,3328,2176,29));
+			Roads.push(new mapObject(6656,4352,3328,2176,30));
+			Roads.push(new mapObject(9984,4352,3328,2176,31));
+			console.log('last 4 objects');
+			Roads.push(new mapObject(0,6528,3328,2176,32));
+			Roads.push(new mapObject(3328,6528,3328,2176,33));
+			Roads.push(new mapObject(6656,6528,3328,2176,34));
+			Roads.push(new mapObject(9984,6528,3328,2176,35));
+			//console.log('drawing');
+			drawn=true;
+		}*/
+	}
+
+function mapObject(x, y, h, w, t) {
+	this.x = x;
+	this.y = y;
+	this.height = h;
+	this.width = w;
+	this.type = t;
+	/* 
+	type 
+		1 = building
+		2 = road
+		3 = intersecton
+	*/
+	if(this.type == 1) {
+		//set up BOX2D object
+		this.fixDef = new b2FixtureDef;
+		this.fixDef.density = 5.0;
+		this.fixDef.friction = 0.5;
+		this.fixDef.restitution = .00;
+		this.bodyDef = new b2BodyDef;
+		this.bodyDef.type = b2Body.b2_staticBody;
+		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
+		this.fixDef.shape = new b2PolygonShape();
+		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
+		this.Body = world.CreateBody(this.bodyDef);
+		this.Body.CreateFixture(this.fixDef);
+	}
+	
+}
+
+doneDraw = false;
+mapObject.prototype.draw = function(ox,oy) {
+	
+
+		if(this.type == 1) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img=document.getElementById("building");
+			
+			//context.drawImage(imageLoader.images["building"],0,0, this.width, this.height);
+			//context.drawImage(imageLoader.images["building"],0,0, this.width, this.height);
+			context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 1*tileSize, tileSize, tileSize, this.width, this.height, this.width, this.height);
+			
+			context.restore();
+		}
+		
+		else if(this.type == 2) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img2=document.getElementById("road_vert");
+			context.drawImage(imageLoader.images["road_vert"],0,0,this.width, this.height);
+			
+			
+			//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			/*context.fillStyle = "rgb(196,196,196)";
+			context.beginPath();
+			context.moveTo(-1,-1);
+			context.lineTo(this.width+1, -1);
+			context.lineTo(this.width+1, this.height+1);
+			context.lineTo(-1, this.height+1);
+			context.closePath();
+			context.fill();
+		
+			context.fillStyle = "yellow";
+			*/
+			//context.fillStyle = "white";
+			
+			/*context.translate(0, (this.height/2)-10);
+			var num = Math.floor(this.width/64)
+			var num2 = this.width/num;
+			num = num/2;
+			var num3 = 0;
+			for(var i=0; i < num; ++i) {
+				context.beginPath();
+				context.fillRect(num3,0,num2, 10);
+				num3 = num3 + num2*2
+				context.closePath();
+			}*/
+			
+			context.restore();
+		}	else if(this.type == 3) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img=document.getElementById("road_horiz");
+			context.drawImage(imageLoader.images["road_horiz"],0,0,this.width, this.height);
+			context.restore();
+		}	else if(this.type == 4) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img=document.getElementById("inters");
+			context.drawImage(imageLoader.images["inters0"],0,0);
+			context.restore();
+		}	else if(this.type == 5) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			//var img=document.getElementById("inters");
+			context.drawImage(imageLoader.images["inters1"],0,0);
+			context.restore();
+		}	else if(this.type == 6) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters2"],0,0);
+			context.restore();
+		}	else if(this.type == 7) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters3"],0,0);
+			context.restore();
+		}	else if(this.type == 8) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters4"],0,0);
+			context.restore();
+		}	else if(this.type == 9) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters5"],0,0);
+			context.restore();
+		}	else if(this.type == 10) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters6"],0,0);
+			context.restore();
+		}	else if(this.type == 11) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters7"],0,0);
+			context.restore();
+		}	else if(this.type == 12) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["inters8"],0,0);
+			context.restore();
+		} 
+		/*if(this.type == 20) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map1"],0,0);
+			context.restore();
+		} else if(this.type == 21) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map2"],0,0);
+			context.restore();
+		} else if(this.type == 22) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map3"],0,0);
+			context.restore();
+		} else if(this.type == 23) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map4"],0,0);
+			context.restore();
+		} else if(this.type == 24) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map5"],0,0);
+			context.restore();
+		} else if(this.type == 25) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map6"],0,0);
+			context.restore();
+		} else if(this.type == 26) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map7"],0,0);
+			context.restore();
+		} else if(this.type == 27) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map8"],0,0);
+			context.restore();
+		} else if(this.type == 28) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map9"],0,0);
+			context.restore();
+		} else if(this.type == 29) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map10"],0,0);
+			context.restore();
+		} else if(this.type == 30) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map11"],0,0);
+			context.restore();
+		} else if(this.type == 31) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map12"],0,0);
+			context.restore();
+		} else if(this.type == 32) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map13"],0,0);
+			context.restore();
+			//console.log('last 4 images');
+		} else if(this.type == 33) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map14"],0,0);
+			context.restore();
+		} else if(this.type == 34) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map15"],0,0);
+			context.restore();
+		} else if(this.type == 35) {
+			context.save();
+			context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+			context.drawImage(imageLoader.images["map16"],0,0);
+			context.restore();
+		}*/
+}
+
+mapObject.prototype.update = function() {
+		//drawn;
+
+}
+
+
+
+//**********************
+//* STEERING BEHAVIORS *
+//**********************
+
+function ease1(t, b, c, d) {//Ease in Quintic
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(tc*ts);
+}
+function easeIQr(t) {//Easing In Quart
+	return t*t*t*t;
+}
+function easeOQn(t) {//Easing Out Quint
+	return 1+(--t)*t*t*t*t
+}
+function ease2(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(1.5*tc*ts + -2*ts*ts + 3*tc + -2*ts + 0.5*t);
+}
+function seek(agent, targetX, targetY) {//move toward
+	var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = utils.getMagnitude(x, y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+	
+}
+function arrive(agent, targetX, targetY) {
+	var result = new b2Vec2;
+	//get direction from agent to target
+	var directionX = targetX - agent.x;
+	var directionY = targetY - agent.y;
+	
+	// normalize direction
+	var distance = utils.getMagnitude(directionX, directionY);
+	directionX = directionX / distance; 
+	directionY = directionY / distance; 
+	
+	if (distance > 200) {
+		targetSpeed = agent.maxAcceleration;
+	}
+	else {
+		targetSpeed = agent.maxAcceleration * distance / 200;
+	}
+	var targetVelocityX = directionX * targetSpeed;
+	var targetVelocityY = directionY * targetSpeed;
+
+	// steer toward desired velocity
+	result.x = (targetVelocityX - agent.Body.GetLinearVelocity.x);
+	result.y = (targetVelocityY - agent.Body.GetLinearVelocity.y);
+	
+	return result;
+}
+function flee(agent, targetX, targetY) {// move away
+	var x = agent.x - targetX;
+	var y = agent.y - targetY;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+function pursue(agent, targetX, targetY) {// move toward target future position
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return seek(agent, targetNewX, targetNewY);
+}
+function evade(agent, targetX, targetY) {// evade away from future target position
+	//var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	steeringForce.linearX = x;
+	steeringForce.linearY = y;
+	
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	var t = dist / targetMaxS;
+	
+	var targetNewX = targetVX * t + targetX;
+	var targetNewY = targetVY * t + targetY;
+	
+	return flee(agent, targetNewX, targetNewY, steeringForce);
+}	
+function wander(agent, steeringForce) {
+	// perturb wander angle by a small random amount.
+	var deltaWander = Math.random() * agent.wanderRate;
+	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
+			
+	// move target to wanderOffset in front of agent
+	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
+	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
+	
+	// draw the wander circle, etc. if drawDebug is enabled.
+	if (drawDebug == true) {
+		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
+		drawCircle(targetX, targetY, 8);
+		context.moveTo(agent.x, agent.y);
+		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
+		context.lineTo(targetX, targetY);
+		context.stroke();
+	}
+	
+	// seek toward the target point
+	return seek(agent, targetX, targetY, steeringForce);
+}
+function separation(agent, neighbors) {
+	for (var i = 0; i < neighbors.length; ++i) {
+		var toAgentX = agent.x - neighbors[i].x;
+		var toAgentY = agent.y - neighbors[i].y;
+		var toAgentMagnitude = utils.getMagnitude(toAgentX, toAgentY);
+		if (toAgentMagnitude > 0) {
+			var normalizedToAgentX = toAgentX / toAgentMagnitude;
+			var normalizedToAgentY = toAgentY / toAgentMagnitude;
+			
+			// scale force to inversely proportional to distance from neighbor:
+			this.steeringForce.x += normalizedToAgentX / toAgentMagnitude;
+			this.steeringForce.y += normalizedToAgentY / toAgentMagnitude;
+		}
+	}
+}
+
+
+
+//var spawner = new spawnController();
+//spawner.initWorld();
+
+  
+var gameState = 1;
+function tick() {
+	if(gameState == 0) {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+	}
+	if(gameState == 1) {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		world.Step((1/60),10,10);
+		
+		drawMap();
+		
+		for(var i = 0; i < Buildings.length; ++i) {
+			//Buildings[i].update();
+			Buildings[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Roads.length; ++i) {
+			//Roads[i].update();
+			Roads[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Intersections.length; ++i) {
+			//Intersections[i].update();
+			Intersections[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Pickups.length; ++i) {
+			//Pickups[i].update();
+			Pickups[i].draw(Player.x,Player.y);
+		}
+		for(var i = 0; i < Agents.length; ++i) {
+			var agent = Agents[i];
+			//agent.update();
+			agent.draw(Player.x, Player.y);
+		}
+		
+		//Car.update();
+		//Car.draw();
+		//ship.draw();
+		
+		context.save();
+		
+		Player.update();
+		Player.draw();
+		
+		//console.log(thrust);
+		//console.log(vx);
+		//console.log(state);
+
+		requestAnimationFrame(tick);
+	}
+	/*if(gameState == 3) {
+		context.save();
+		context.fillStyle = "black";
+		context.globalAlpha = 0.5;
+		context.fillRect(0, 0, canvas.width, canvas.height)
+		context.fillStyle = "red";
+		context.globalAlpha = 1;
+		context.font = "75px Verdana";
+		context.fillText("GAME OVER",canvas.width/2 - 220, 200);
+		context.font = "25px Verdana";
+		var dollars = Math.floor(Player.moneyCollected/100)
+		var cents = Math.round((Player.moneyCollected/100 - dollars) * 100)
+		context.fillText("You picked up $" + dollars + "." + cents, canvas.width/2 - 140, 240);
+		context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
+		context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
+	}*/
+	
+}
+
+</script></body></html>
