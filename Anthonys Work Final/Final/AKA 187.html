@@ -339,6 +339,24 @@ Hobo.prototype.draw = function() {
 		//context.drawImage(imageLoader.images["player"],-16,-16);
 		//context.drawImage(imageLoader.images["walksheet"], currentFrame * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
 		
+		var vel = Player.Body.GetLinearVelocity();
+		
+		//var speed = vel.Normalize();
+		
+		//console.log(vel);
+		//var velCurrent = (vel.x * vel.y)+.5;
+		/*
+		if (speed >= .75) {
+			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		} else if (speed <= -.75) {
+			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		}else {
+			context.drawImage(imageLoader.images["player"],-16,-16);
+		}*/
+		
+		
+		
+		
 		PosX = Player.x;
 		PosY = Player.y;
 		
@@ -347,14 +365,25 @@ Hobo.prototype.draw = function() {
 		//var newPosX = Player.x;
 		//var newPosY = Player.y;
 		
+		var dx = newPosX - oldPosX,
+			dy = newPosY - oldPosY,
+			dist = Math.sqrt(dx * dx + dy * dy);
+			
+		if (dist >= .5) {
+			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		} else {
+			context.drawImage(imageLoader.images["player"],-16,-16);
+		}
 		
+		
+		/*
 		if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
 			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 		} else if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
 			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 		} else {
 			context.drawImage(imageLoader.images["player"],-16,-16);
-		}
+		}*/
 			
 		//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 		
