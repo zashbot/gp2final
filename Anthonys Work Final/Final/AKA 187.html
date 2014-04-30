@@ -31,23 +31,11 @@ console.log('start');
 imageLoader.queueImage("car");
 imageLoader.queueImage("car2");
 imageLoader.queueImage("player");
-imageLoader.queueImage("building");
-imageLoader.queueImage("road_horiz");
-imageLoader.queueImage("road_vert");
-imageLoader.queueImage("inters0");
-imageLoader.queueImage("inters1");
-imageLoader.queueImage("inters2");
-imageLoader.queueImage("inters3");
-imageLoader.queueImage("inters4");
-imageLoader.queueImage("inters5");
-imageLoader.queueImage("inters6");
-imageLoader.queueImage("inters7");
-imageLoader.queueImage("inters8");
-//imageLoader.queueImage("mapM2");
 imageLoader.queueImage("spritesheet");
+imageLoader.queueImage("walksheet");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
-var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.mp3"], volume: 0.1});
+var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.wav"], volume: 0.1});
 var car1Sfx = new Howl({urls: ["audio/car1.wav", "audio/car1.wav"], volume:0.1});
 var car2Sfx = new Howl({urls: ["audio/car2.wav", "audio/car2.wav"], volume:0.1});
 
@@ -303,6 +291,13 @@ function Hobo(x, y) {
 	
 	
 }
+
+var PosX = Player.x;
+var PosY = Player.y;
+var oldPosX = Player.x;
+var oldPosY = Player.y;
+var newPosX = Player.x;
+var newPosY = Player.y;
 	
 Hobo.prototype.draw = function() {
 	//draw hobo
@@ -341,7 +336,32 @@ Hobo.prototype.draw = function() {
 		context.drawImage(imageLoader.images["car2"],-16,-32);
 	} else {
 		//var img=document.getElementById("player");
-		context.drawImage(imageLoader.images["player"],-16,-16);
+		//context.drawImage(imageLoader.images["player"],-16,-16);
+		//context.drawImage(imageLoader.images["walksheet"], currentFrame * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+		
+		PosX = Player.x;
+		PosY = Player.y;
+		
+		oldPosX = Player.x;
+		oldPosY = Player.y;
+		//var newPosX = Player.x;
+		//var newPosY = Player.y;
+		
+		
+		if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
+			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		} else if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
+			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		} else {
+			context.drawImage(imageLoader.images["player"],-16,-16);
+		}
+			
+		//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+		
+		newPosX = Player.x;
+		newPosY = Player.y;
+		
+		
 	}
 	
 	
@@ -506,6 +526,9 @@ Hobo.prototype.update = function(name) {
 		this.x = thevec.x * SCALE;
 		this.y = thevec.y * SCALE;
 		
+
+		
+		
 		if (vel.x >= 7) {
 			vel.x = 7;
 		}
@@ -597,14 +620,7 @@ function onMouseUp(e) {
 //******************
 //*	   OBJECTS     *
 //******************
-function drawCircle(x, y, radius) {
-	context.save();
-	context.strokeStyle = "red";
-	context.beginPath();
-	context.arc(x, y, radius, 0, 2 * Math.PI);
-	context.stroke();
-	context.restore();
-}
+
 drawn = false;
 built = false;
 //1 = building, 2 = vert, 3 = horiz, 4 = inters
@@ -708,8 +724,6 @@ function mapObject(x, y, h, w, t) {
 	*/
 	if(this.type >= 12) {
 		if(this.type <= 27) {
-	//if(this.type == 12) {
-	//if(this.type == 12||13||14||15||16||17||18||19||20||21||22||23||24||25||26||27) {
 		//set up BOX2D object
 		this.fixDef = new b2FixtureDef;
 		this.fixDef.density = 5.0;
@@ -717,8 +731,8 @@ function mapObject(x, y, h, w, t) {
 		this.fixDef.restitution = .00;
 		this.bodyDef = new b2BodyDef;
 		this.bodyDef.type = b2Body.b2_staticBody;
-		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
-		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
+		this.bodyDef.position.x = Math.floor((this.x + (this.width/2)) / SCALE);
+		this.bodyDef.position.y = Math.floor((this.y + (this.height/2)) / SCALE);
 		this.fixDef.shape = new b2PolygonShape();
 		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
 		this.Body = world.CreateBody(this.bodyDef);
@@ -732,182 +746,183 @@ doneDraw = false;
 mapObject.prototype.draw = function(ox,oy) {
 	if(this.type == 1) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();
 	}	else if(this.type == 2) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 3) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 4) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 5) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 6) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 7) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 8) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 9) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 10) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 11) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 12) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 13) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 14) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 15) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 16) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 17) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 18) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 19) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 20) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 21) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 22) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 23) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 24) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 25) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 26) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 27) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 28) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 29) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 30) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 31) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 32) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 33) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 34) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 35) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}	else if(this.type == 36) {
 		context.save();
-		context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
 		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 		context.restore();	
 	}
@@ -917,10 +932,18 @@ mapObject.prototype.update = function() {
 		//drawn;
 
 }
+function drawCircle(x, y, radius) {
+	context.save();
+	context.strokeStyle = "red";
+	context.beginPath();
+	context.arc(x, y, radius, 0, 2 * Math.PI);
+	context.stroke();
+	context.restore();
+}
 //AGENT
 function Agent() {
-	this.x = 0;
-	this.y = 0;
+	this.x = canvas.width/2;
+	this.y = canvas.height/2;
 	this.orientation = 0;
 	this.rotation = 0;
 	this.alpha = .5;
@@ -937,6 +960,7 @@ function Agent() {
 	this.drawBul = function() {
 		context.save();
 
+		//context.translate(canvas.width/2, canvas.height/2);
 		context.translate(this.x, this.y);
 		context.rotate(this.orientation);
 		
@@ -961,17 +985,28 @@ function Agent() {
 		context.restore();
 	}
 }
+
 //BULLET FUNCTION
 function updateBullets() {
-	bullRot = Player.orientation;
+	
+	var dx = mouse.x - canvas.width/2;//Player.x;
+	var dy = mouse.y - canvas.height/2;//Player.y;
+	
+	//this.orientation = Math.atan2(dy, dx);
+	
+	mouseOrientation =  Math.atan2(dy,dx);
+	
+	
+	bullRot = mouseOrientation;//Player.orientation;
 	
 	if (Player.isFiring && Player.canFire) {
 		var bullet = new Agent();
-		bullet.x = Player.x;
-		bullet.y = Player.y;//-5;
+		bullet.x = canvas.width/2;//Player.x;
+		bullet.y = canvas.height/2;//Player.y;//-5;
 		bullet.radius = 2;
 		bullets.push(bullet);
 		bullRots.push(bullRot);
+		//console.log(bullets.length);
 		shootSfx.play();
 		Player.canFire = false;
 		//attachBulletPfx(bullet);
@@ -987,28 +1022,59 @@ function updateBullets() {
 			//bullRot = agent.orientation;
 			//bullRots.push(bullRot);	
 			
+			//CORRECT(?) Movement
 			blt.x += Math.cos(bltRot)*bullSpeed;
 			blt.y += Math.sin(bltRot)*bullSpeed;
+			
+			//blt.x = canvas.width/2;
+			//blt.y = canvas.height/2;
+			
 			//this.rotation = ship.orientation;
 			
+			//Correct rotation
 			blt.orientation += .51;
+			
 			//bullets[i].orientation = ship.orientation;//utils.getMagnitude(ship.vx, ship.vy);
 			
 			//screen wrapping
-			if (blt.x >= canvas.width - blt.radius || blt.x <= blt.radius || blt.y >= canvas.height - blt.radius || blt.y <= blt.radius) {
+			/*if (blt.x >= canvas.width - blt.radius || blt.x <= blt.radius || blt.y >= canvas.height - blt.radius || blt.y <= blt.radius) {
 				bullets.splice(i,1);
 				bullRots.splice(i,1);
 				//wallSfx.play();
-			}		
+			}	*/	
 		}
 	}
 }
 
 function drawBullets() {
 	for (var i = 0; i < bullets.length; ++i) {
-		bullets[i].drawBul();
-		if (bullets[i].emitter != undefined && bullets[i].emitter != null) {
-			//bullets[i].emitter.draw();
+		for (var i = 0; i < bullRots.length; ++i) {
+			bullets[i].drawBul();
+			/*context.save();
+			
+			context.translate(bullRots[i].x, bullRots[i].y);
+			context.rotate(bullets[i].orientation);
+			
+			context.lineWidth = 2;
+			context.strokeStyle = "yellow";
+			//context.fillStyle = "red";
+			context.beginPath();
+			//context.arc(0, 0, 10, 0, 2*Math.PI);
+			context.moveTo(-5,5);
+			context.lineTo(-5,-5);
+			context.lineTo(5,-5);
+			context.lineTo(5,5);
+			context.lineTo(-5,5);
+			context.lineTo(5,5);
+			context.moveTo(5,-5);
+			context.lineTo(-5,5);
+			//context.lineTo(0,0);
+			//context.closePath();
+			
+			//context.fill();
+			context.stroke();
+			context.restore();*/
+			//console.log(Player.orientation);
 		}
 	}
 }
@@ -1179,7 +1245,20 @@ var targetX = Player.x;
 var targetY = Player.y;
 var targetX2 = mouse.x;//waypoints[points].x;
 var targetY2 = mouse.y;//waypoints[points].y; 
-  
+ 
+// image data
+var frameWidth = 96;
+var frameHeight = 32;
+
+ // animation data
+var startFrame = 0;
+var endFrame = 2;
+var currentFrame = startFrame;
+var animationTimer = 0;
+var frameTimeSeconds = 1 / 7; // i.e., 15 frames per second
+var previousTime = Date.now();
+
+var mouseOrientation = 0;
   
 function initGame() {
 	
@@ -1203,6 +1282,36 @@ function initGame() {
 			//console.log(gameState);
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			world.Step((1/60),10,10);
+			
+			//ANIMATION TIMING
+			var currentTime = Date.now();
+	
+			// divide by 1000 to convert millseconds to seconds....
+			var elapsedTime = (currentTime - previousTime) / 1000;
+			
+			// limit elapsed time to one animation frame so that the
+			// the animation does not run too fast when the window loses
+			// then regains focus.
+			if (elapsedTime > frameTimeSeconds) {
+				elapsedTime = frameTimeSeconds;
+			}
+			
+			animationTimer += elapsedTime;
+			
+			// flip to the next frame
+			if (animationTimer >= frameTimeSeconds) {
+				animationTimer -= frameTimeSeconds;
+				
+				currentFrame += 1;
+				
+				// if all frames have been displayed, go back to first frame.
+				if (currentFrame > endFrame) {
+					currentFrame = startFrame;
+				}
+			}
+			
+			previousTime = currentTime;
+			//ANIMATION TIMING
 			
 			drawMap();
 			
