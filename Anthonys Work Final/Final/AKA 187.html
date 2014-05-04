@@ -21,6 +21,7 @@
 <canvas id="gameCanvas" width="1280" height="800"></canvas>
 </div>
 </center>
+<canvas id="miniCanvas" width="100" height="100"></canvas>
 <script src="./scripts/utils.js"></script>
 <script src="./scripts/imageLoader.js"></script>
 <script src="./scripts/box2d.js"></script>
@@ -75,6 +76,7 @@ world = new b2World(new b2Vec2(0,0), true);
 
 var Player = new Hobo(1408,1408);
 Player.canFire = true;
+var turnspeed = 1;
 //var Car = new Hobo(1000,1664);
 
 var Agents = [];
@@ -152,40 +154,7 @@ var tileSize = 256;
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];*/
 
 
-var map = [27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
-27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
-27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
-27,27,27,33,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,34,27,27,27,
-27,27,27,29,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,31,27,27,27,
-27,27,27,29,36,4,10,10,10,10,9,10,10,10,10,9,10,10,10,10,9,10,10,10,10,9,10,10,10,10,9,10,10,10,10,10,9,10,10,10,9,10,10,10,10,10,5,36,31,27,27,27,
-27,27,27,29,36,11,19,23,23,20,11,19,23,23,20,11,19,23,23,20,11,19,23,23,20,11,19,23,23,20,11,19,20,36,19,20,11,19,23,20,11,19,23,23,23,20,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,11,26,18,18,24,11,26,18,18,24,11,26,18,18,24,11,26,18,18,24,11,22,21,36,22,21,11,26,18,24,11,26,18,18,18,24,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,11,22,25,25,21,11,26,18,18,24,11,26,18,18,24,11,26,18,18,24,11,36,36,36,36,36,8,10,10,10,6,26,18,18,18,24,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,8,10,10,10,10,6,26,18,18,24,11,22,25,25,21,11,22,25,25,21,11,19,20,36,19,20,11,26,18,24,11,22,25,25,25,21,11,36,31,27,27,27,
-27,27,27,29,36,11,22,25,25,21,11,15,16,16,13,11,22,25,25,21,8,9,10,10,10,1,10,10,10,10,6,22,21,36,22,21,11,22,25,21,8,10,10,10,10,10,6,36,31,27,27,27,
-27,27,27,29,36,8,10,10,10,10,1,10,10,10,10,7,10,9,10,10,7,6,15,16,13,11,19,23,23,20,8,10,10,10,10,10,1,10,10,10,6,19,23,23,23,20,11,36,31,27,27,27,
-27,27,27,29,36,11,19,23,23,20,11,19,23,23,23,23,20,11,19,23,20,3,5,15,13,11,22,18,18,24,11,19,23,23,23,20,11,12,12,12,11,22,25,25,25,21,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,11,26,18,25,25,18,24,11,26,18,24,12,11,12,12,11,36,26,18,24,11,22,25,25,25,21,11,14,14,14,8,10,10,10,9,10,6,36,31,27,27,27,
-27,27,27,29,36,11,22,18,18,24,11,22,21,36,36,22,21,11,26,18,24,17,11,17,17,11,36,22,25,24,8,10,10,10,10,10,1,10,10,9,2,36,19,20,11,12,11,36,31,27,27,27,
-27,27,27,29,36,11,36,26,18,24,8,10,10,10,10,10,10,6,22,25,21,14,11,14,14,11,36,36,36,14,11,19,23,23,23,20,11,12,12,11,36,19,18,24,11,17,11,36,31,27,27,27,
-27,27,27,29,36,11,36,22,25,21,11,19,23,23,23,23,20,8,10,10,10,10,1,10,10,1,10,10,10,10,6,22,25,25,25,21,11,14,14,11,19,18,18,24,11,17,11,36,31,27,27,27,
-27,27,27,29,36,8,10,10,10,10,6,26,18,18,18,18,24,11,19,23,23,20,11,27,27,11,19,23,23,20,8,10,10,10,9,10,7,10,10,6,22,25,25,21,11,14,11,36,31,27,27,27,
-27,27,27,29,36,11,15,16,16,13,11,22,25,25,25,25,21,11,22,25,25,21,11,27,27,11,22,25,25,21,11,19,23,20,11,19,23,23,20,8,10,10,9,10,1,10,6,36,31,27,27,27,
-27,27,27,29,36,8,10,10,10,10,1,10,10,10,10,9,10,7,10,10,10,10,1,10,10,1,10,10,10,10,6,26,18,24,11,26,18,18,24,11,19,20,11,12,11,12,11,36,31,27,27,27,
-27,27,27,29,36,11,19,23,23,20,11,19,23,23,20,11,15,16,16,16,16,13,11,15,13,11,15,16,16,13,11,26,18,24,11,26,18,18,24,11,22,21,11,14,11,17,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,11,26,18,18,24,11,19,23,20,4,10,10,7,10,10,7,5,19,23,20,11,22,25,21,11,22,25,25,21,8,10,10,1,10,6,17,11,36,31,27,27,27,
-27,27,27,29,36,11,26,18,18,24,11,26,18,18,24,11,26,18,24,11,19,23,23,23,23,20,11,26,18,24,8,10,10,10,7,10,9,10,10,6,19,20,11,12,11,17,11,36,31,27,27,27,
-27,27,27,29,36,11,22,25,25,21,11,22,25,25,21,11,26,18,24,11,26,18,18,18,18,24,11,26,18,24,11,19,23,23,23,20,11,19,20,11,22,21,11,14,11,14,11,36,31,27,27,27,
-27,27,27,29,36,8,10,10,10,10,1,10,10,10,10,6,26,18,24,11,22,25,25,25,25,21,11,22,25,21,11,26,18,18,18,24,11,26,24,8,10,10,7,10,7,10,6,36,31,27,27,27,
-27,27,27,29,36,11,19,23,23,20,11,19,23,23,20,11,22,25,21,8,10,10,10,10,10,10,1,10,10,10,6,22,25,25,25,21,11,22,21,11,19,23,23,23,23,20,11,36,31,27,27,27,
-27,27,27,29,36,11,15,16,16,13,11,26,18,18,24,8,10,10,10,6,19,23,23,23,23,20,11,19,23,20,8,10,10,10,10,10,7,10,10,6,15,16,16,16,16,13,11,36,31,27,27,27,
-27,27,27,29,36,11,22,25,25,21,11,22,25,25,21,11,15,16,13,11,22,25,25,25,25,21,11,22,25,21,11,15,16,16,16,16,16,16,13,11,22,25,25,25,25,21,11,36,31,27,27,27,
-27,27,27,29,36,3,10,10,10,10,7,10,10,10,10,7,10,10,10,7,10,10,10,10,10,10,7,10,10,10,7,10,10,10,10,10,10,10,10,7,10,10,10,10,10,10,2,36,31,27,27,27,
-27,27,27,29,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,31,27,27,27,
-27,27,27,32,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,35,27,27,27,
-27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
-27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
-27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27];
+var map = [27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 33, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 4, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 5, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 20, 36, 19, 20, 11, 19, 23, 20, 11, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 36, 22, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 36, 36, 36, 36, 36, 8, 10, 10, 10, 6, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 8, 10, 10, 10, 10, 6, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 19, 20, 36, 19, 20, 11, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 15, 16, 16, 13, 11, 22, 25, 25, 21, 8, 9, 10, 10, 10, 1, 10, 10, 10, 10, 6, 22, 21, 36, 22, 21, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 7, 10, 9, 10, 10, 7, 6, 15, 16, 13, 11, 19, 23, 23, 20, 8, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 3, 5, 15, 13, 11, 22, 18, 18, 24, 11, 19, 23, 23, 23, 20, 11, 12, 12, 12, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 25, 25, 18, 24, 11, 26, 18, 24, 12, 11, 12, 12, 11, 36, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 14, 14, 14, 8, 10, 10, 10, 9, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 18, 18, 24, 11, 22, 21, 36, 36, 22, 21, 11, 26, 18, 24, 17, 11, 17, 17, 11, 36, 22, 25, 24, 8, 10, 10, 10, 10, 10, 1, 10, 10, 9, 2, 36, 19, 20, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 26, 18, 24, 8, 10, 10, 10, 10, 10, 10, 6, 22, 25, 21, 14, 11, 14, 14, 11, 36, 36, 36, 14, 11, 19, 23, 23, 23, 20, 11, 12, 12, 11, 36, 19, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 22, 25, 21, 11, 19, 23, 23, 23, 23, 20, 8, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 14, 14, 11, 19, 18, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 6, 26, 18, 18, 18, 18, 24, 11, 19, 23, 23, 20, 11, 27, 27, 11, 19, 23, 23, 20, 8, 10, 10, 10, 9, 10, 7, 10, 10, 6, 22, 25, 25, 21, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 15, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 25, 21, 11, 27, 27, 11, 22, 25, 25, 21, 11, 19, 23, 20, 11, 19, 23, 23, 20, 8, 10, 10, 9, 10, 1, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 9, 10, 7, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 26, 18, 18, 24, 11, 19, 20, 11, 12, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 15, 16, 16, 16, 16, 13, 11, 15, 13, 11, 15, 16, 16, 13, 11, 26, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 11, 14, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 19, 23, 20, 4, 10, 10, 7, 10, 10, 7, 5, 19, 23, 20, 11, 22, 25, 21, 11, 22, 25, 25, 21, 8, 10, 10, 1, 10, 6, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 23, 20, 11, 26, 18, 24, 8, 10, 10, 10, 7, 10, 9, 10, 10, 6, 19, 20, 11, 12, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 20, 11, 19, 20, 11, 22, 21, 11, 14, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 26, 18, 18, 18, 24, 11, 26, 24, 8, 10, 10, 7, 10, 7, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 22, 21, 11, 19, 23, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 8, 10, 10, 10, 6, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 8, 10, 10, 10, 10, 10, 7, 10, 10, 6, 15, 16, 16, 16, 16, 13, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 15, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 15, 16, 16, 16, 16, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 3, 10, 10, 10, 10, 7, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 2, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 35, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27];
 
 
 
@@ -264,7 +233,9 @@ function Hobo(x, y) {
 	this.bodyDef.type = b2Body.b2_dynamicBody;
 	this.bodyDef.position.x = this.x / SCALE;
 	this.bodyDef.position.y = this.y / SCALE;
+	
 	this.bodyDef.linearDamping = 1.0;
+	
 	this.fixDef.shape = new b2CircleShape(0.5);
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
@@ -339,7 +310,7 @@ Hobo.prototype.draw = function() {
 		//context.drawImage(imageLoader.images["player"],-16,-16);
 		//context.drawImage(imageLoader.images["walksheet"], currentFrame * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
 		
-		var vel = Player.Body.GetLinearVelocity();
+		//var vel = Player.Body.GetLinearVelocity();
 		
 		//var speed = vel.Normalize();
 		
@@ -376,7 +347,12 @@ Hobo.prototype.draw = function() {
 		}
 		
 		
-		/*
+
+		
+		newPosX = Player.x;
+		newPosY = Player.y;
+		
+				/*
 		if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
 			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 		} else if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
@@ -386,11 +362,6 @@ Hobo.prototype.draw = function() {
 		}*/
 			
 		//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		
-		newPosX = Player.x;
-		newPosY = Player.y;
-		
-		
 	}
 	
 	
@@ -398,29 +369,56 @@ Hobo.prototype.draw = function() {
 
 }
 
+//force = new b2Vec2(0,0);
+
 Hobo.prototype.update = function(name) {
-	if (state == 1) {	
-		
+	
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()){ //if we are enemy it returns 1
+				//this.Body.SetUserData(this)
+				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+					//this.Body.SetUserData(this)
+					console.log(bodily.other.GetUserData());
+					console.log();
+					i = bodily.other.GetUserData(this);
+					
+					//gameState = 3;
+					
+					//destroyFixture();
+					
+					//i = bodily.other.GetUserData();
+					//Agents.splice(i,1);
+					
+				}
+			}
+			if(!bodily.next){break;}
+			else{bodily = bodily.next}
+		}while(1)
+	}
+	
+	if (state == 1) {	//When in Car - Try to get handbrake working
 		//keyboard input for our hobo
 		force = new b2Vec2(0,0);
 		if(chars.length === 1 ) { //if one key is pressed
 			
 			if (chars[0] == 87) { //W
 				force.x = 0;
-				force.y = -1;
+				force.y = -turnspeed;
 				//car1Sfx.play();
 			}
 			else if (chars[0] == 65) { //A
-				force.x = -1;
+				force.x = -turnspeed;
 				force.y = 0;
 				
 			}
 			else if (chars[0] == 83) { //S
 				force.x = 0;
-				force.y = 1;
+				force.y = turnspeed;
 			}
 			else if (chars[0] == 68) { //D
-				force.x = 1;
+				force.x = turnspeed;
 				force.y = 0;
 			}
 			/*else if (chars[0] == 69) { //E
@@ -434,20 +432,20 @@ Hobo.prototype.update = function(name) {
 		}
 		else if(chars.length >= 2) { //if two keys are pressed
 			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
-				force.x = 1;//0.75;
-				force.y = -1;//-0.75;
+				force.x = turnspeed;//0.75;
+				force.y = -turnspeed;//-0.75;
 			}
 			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
-				force.x = 1;//0.75;
-				force.y = 1;//0.75;
+				force.x = turnspeed;//0.75;
+				force.y = turnspeed;//0.75;
 			}
 			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
-				force.x = -1;//-0.75;
-				force.y = 1;//0.75;
+				force.x = -turnspeed;//-0.75;
+				force.y = turnspeed;//0.75;
 			}
 			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
-				force.x = -1;//-0.75;
-				force.y = -1;//-0.75;
+				force.x = -turnspeed;//-0.75;
+				force.y = -turnspeed;//-0.75;
 			}
 			/*if (chars.indexOf(32) > -1)
 			{
@@ -542,6 +540,7 @@ Hobo.prototype.update = function(name) {
 		
 		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
 		//enforce max velocity
+		
 		var vel = this.Body.GetLinearVelocity();
 		this.orientation = Math.atan2(vel.y,vel.x);
 		//var speed = vel.Normalize();
@@ -573,32 +572,132 @@ Hobo.prototype.update = function(name) {
 	}
 }
 
+//our hateable antagonists
+function Punk(x, y) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.maxAcceleration = .2;
+	var lastseenx = 0, lastseeny = 0, lastsight = 0;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 4;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.2;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 0.5;
+	this.bodyDef.userData = 1;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	this.Body.SetUserData(this)
+}
+
+Punk.prototype.draw = function(ox,oy) {
+	context.save();
+	context.strokeStyle = "black";
+	//context.strokeText(this.x + " " + this.y,canvas.height,0);
+	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+	context.rotate(this.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "magenta"
+	context.arc(0,0, 15, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath();
+	context.beginPath();
+	context.fillStyle = "black";
+	context.moveTo(1,0);
+	context.lineTo(1,16);
+	context.lineTo(-1,16);
+	context.lineTo(-1,0);
+	context.closePath();
+	context.fill();
+	context.restore();
+	context.save()
+	if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
+		context.fillStyle = "magenta";
+		context.translate(canvas.width/2, canvas.height/2);
+		context.beginPath();
+		context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
+		context.translate(0, -200);
+		context.moveTo(0,0);
+		context.lineTo(7,7);
+		context.lineTo(-7,7);
+		context.closePath();
+		context.fill();
+		context.restore();
+	}
+}
+
+Punk.prototype.update = function() {
+	var force = new b2Vec2
+	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
+		force = flee(this, Player.x, Player.y);
+	}
+	//lostsight += 1*REFMULTI
+	force.x = force.x*REFMULTI;
+	force.y = force.y*REFMULTI;
+	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+}
+
+function spawnController() {
+	this.initWorld = function() {
+		/*for(i = 0; i < 5; i++){ //make punks
+				var a = utils.getRandomInteger(0, Roads.length - 1);
+				var b = Roads[a];
+				var c = utils.getRandomInteger(0, 256);
+				var d = utils.getRandomInteger(0, 256);
+				Agents.push(new Punk(256 + c, 256 + d));
+		}*/
+		for(i = 0; i < 30; i++){ //make punks
+			var a = utils.getRandomInteger(0, Roads.length - 1);
+			var b = Roads[a];
+			var c = utils.getRandomInteger(0, b.width);
+			var d = utils.getRandomInteger(0, b.height);
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d));
+			
+		}
+	}
+	this.count = 0;
+}
+
+
+//KEY FUNCTIONS
 function onKeyDown(e) {
 	switch(e.keyCode) {
 		case 69: // E
-
+			
 			break;
 		case 37:      //left
-
-
+			force.x = -1;
+			force.y = 0;
           break;
         case 39:      //right
-
+			force.x = 1;
+			force.y = 0;
           break;
         case 38:      //up
-
+			force.x = 0;
+			force.y = -1;
           break;
 		case 40:      //Down
-
-
+			force.x = 0;
+			force.y = 1;
           break;
 		case 13:      //Enter
 
 
           break;
 		case 32:      //Space
-
-
+		turnspeed = 2;
           break;		  
 	};
 }
@@ -612,16 +711,20 @@ function onKeyUp(e) {
 			}
 			break;
 		case 37:      //left
-
+			force.x = 0;
+			force.y = 0;
           break;
         case 39:      //right
-
+			force.x = 0;
+			force.y = 0;
           break;
         case 38:      //up
-
+			force.x = 0;
+			force.y = 0;
           break;
 		case 40:      //Down
-
+			force.x = 0;
+			force.y = 1;
           break;	
 		case 13:      //Enter
 			//gameState = 1;
@@ -632,7 +735,7 @@ function onKeyUp(e) {
 
           break;
 		case 32:      //Space
-			
+		turnspeed = 1;
           break;			  
 	};
 }
@@ -760,8 +863,10 @@ function mapObject(x, y, h, w, t) {
 		this.fixDef.restitution = .00;
 		this.bodyDef = new b2BodyDef;
 		this.bodyDef.type = b2Body.b2_staticBody;
-		this.bodyDef.position.x = Math.floor((this.x + (this.width/2)) / SCALE);
-		this.bodyDef.position.y = Math.floor((this.y + (this.height/2)) / SCALE);
+		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
+		//this.bodyDef.position.x = Math.floor((this.x + (this.width/2)) / SCALE);
+		//this.bodyDef.position.y = Math.floor((this.y + (this.height/2)) / SCALE);		
 		this.fixDef.shape = new b2PolygonShape();
 		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
 		this.Body = world.CreateBody(this.bodyDef);
@@ -772,6 +877,7 @@ function mapObject(x, y, h, w, t) {
 }
 
 doneDraw = false;
+
 mapObject.prototype.draw = function(ox,oy) {
 	if(this.type == 1) {
 		context.save();
@@ -1025,7 +1131,6 @@ function updateBullets() {
 	
 	mouseOrientation =  Math.atan2(dy,dx);
 	
-	
 	bullRot = mouseOrientation;//Player.orientation;
 	
 	if (Player.isFiring && Player.canFire) {
@@ -1112,7 +1217,8 @@ function drawBullets() {
 var bullets = [];
 var bullRot = 0;
 var bullRots = [];
-var bullSpeed = 6;
+var bullPos = [];
+var bullSpeed = 10;
 var bulletFireDelayMs = 200;
 
 //**********************
@@ -1204,7 +1310,7 @@ function pursue(agent, targetX, targetY) {// move toward target future position
 	return seek(agent, targetNewX, targetNewY);
 }
 function evade(agent, targetX, targetY) {// evade away from future target position
-	//var x = targetX - agent.x;
+	var x = targetX - agent.x;
 	var y = targetY - agent.y;
 	
 	var distance = Math.sqrt(x * x + y * y);
@@ -1237,14 +1343,14 @@ function wander(agent, steeringForce) {
 	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
 	
 	// draw the wander circle, etc. if drawDebug is enabled.
-	if (drawDebug == true) {
+	/*if (drawDebug == true) {
 		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
 		drawCircle(targetX, targetY, 8);
 		context.moveTo(agent.x, agent.y);
 		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
 		context.lineTo(targetX, targetY);
 		context.stroke();
-	}
+	}*/
 	
 	// seek toward the target point
 	return seek(agent, targetX, targetY, steeringForce);
@@ -1266,9 +1372,9 @@ function separation(agent, neighbors) {
 }
 
 //init();
-
-//var spawner = new spawnController();
-//spawner.initWorld();
+drawMap();
+var spawner = new spawnController();
+spawner.initWorld();
 
 var targetX = Player.x;
 var targetY = Player.y;
@@ -1288,9 +1394,26 @@ var frameTimeSeconds = 1 / 7; // i.e., 15 frames per second
 var previousTime = Date.now();
 
 var mouseOrientation = 0;
-  
-function initGame() {
+ 
+var oldWidth = document.body.clientWidth;
+var oldHeight = document.body.clientHeight;
+
+function detectViewportChange(){
 	
+	var currentHeight = document.body.clientHeight;
+    var currentWidth = document.body.clientWidth; 
+	
+	if(currentWidth != oldWidth || currentHeight != oldHeight){
+		oldWidth = currentWidth;
+		oldHeight = currentHeight;
+		
+		canvas = document.getElementById("gameCanvas");
+		context = canvas.getContext("2d");
+		mouse = utils.captureMouse(canvas);
+	}
+}
+function initGame() {
+	detectViewportChange();
 	window.addEventListener("keydown", onKeyDown, false);
 	window.addEventListener("keyup", onKeyUp, false);
 	window.addEventListener("mousedown", onMouseDown, false);
@@ -1298,7 +1421,7 @@ function initGame() {
 	
 	(function tick() {
 		//context.clearRect(0, 0, canvas.width, canvas.height);
-		window.requestAnimationFrame(tick);
+		//window.requestAnimationFrame(tick);
 		
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		
@@ -1317,6 +1440,8 @@ function initGame() {
 	
 			// divide by 1000 to convert millseconds to seconds....
 			var elapsedTime = (currentTime - previousTime) / 1000;
+			
+			//spawner.initWorld();
 			
 			// limit elapsed time to one animation frame so that the
 			// the animation does not run too fast when the window loses
@@ -1342,14 +1467,14 @@ function initGame() {
 			previousTime = currentTime;
 			//ANIMATION TIMING
 			
-			drawMap();
+			
 			
 			for(var i = 0; i < Buildings.length; ++i) {
 				//Buildings[i].update();
 				Buildings[i].draw(Player.x,Player.y);
 			}
 			for(var i = 0; i < Roads.length; ++i) {
-				//Roads[i].update();
+				Roads[i].update();
 				Roads[i].draw(Player.x,Player.y);
 			}
 			for(var i = 0; i < Intersections.length; ++i) {
@@ -1362,7 +1487,7 @@ function initGame() {
 			}
 			for(var i = 0; i < Agents.length; ++i) {
 				var agent = Agents[i];
-				//agent.update();
+				agent.update();
 				agent.draw(Player.x, Player.y);
 			}
 			
@@ -1374,18 +1499,24 @@ function initGame() {
 			
 			Player.update();
 			Player.draw();
-			
+			//spawner.update();
 			//console.log(bullets.length);
 			//console.log(targetX);
 			
 			drawCircle(mouse.x, mouse.y, 12);
-			
+			//spawner.update();
 			updateBullets();
 			drawBullets();
 			//console.log(thrust);
 			//console.log(vx);
 			//console.log(state);
-
+			context.fillStyle = "black";
+			context.font = '30pt Calibri';
+			context.fillText("frame time: " + elapsedTime, 16, 32);
+			context.fillText("frame rate: " + Math.round((1.0 / elapsedTime)), 16, 64);	
+			context.fillText("Agents Length: " + Agents.length, 16, 98);	
+			context.fillText("Punks: " + Agents.length, 16, 128);	
+			//console.log(Agents.length);
 			//requestAnimationFrame(tick);
 		}
 		if(gameState == 2) {
@@ -1420,7 +1551,7 @@ function initGame() {
 			context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
 			context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
 		}
-		
+		window.requestAnimationFrame(tick);
 	})();
 }
 </script></body></html>
