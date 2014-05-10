@@ -18,18 +18,21 @@
 </head><body>
 <center>
 <div id="display">
-<canvas id="gameCanvas" width="1280" height="800"></canvas>
+<canvas id="gameCanvas" style="z-index: 1;" width="1280" height="800"></canvas>
 </div>
 </center>
-<canvas id="miniCanvas" width="100" height="100"></canvas>
+<div id="mini">
+<canvas id="miniCanvas" style="z-index: 2;" width="100" height="100"></canvas>
+</div>
 <script src="./scripts/utils.js"></script>
 <script src="./scripts/imageLoader.js"></script>
 <script src="./scripts/box2d.js"></script>
 <script src="./scripts/ship.js"></script>
 <script src="./scripts/howler.js"></script>
 <script>
-console.log('start');
-imageLoader.queueImage("car");
+
+//console.log('start');
+//imageLoader.queueImage("car");
 imageLoader.queueImage("car2");
 imageLoader.queueImage("player");
 imageLoader.queueImage("spritesheet");
@@ -37,22 +40,34 @@ imageLoader.queueImage("walksheet");
 imageLoader.queueImage("walksheet2");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
-var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.wav"], volume: 0.1});
-var car1Sfx = new Howl({urls: ["audio/car1.wav", "audio/car1.wav"], volume:0.1, loop:true});
-var car2Sfx = new Howl({urls: ["audio/car2.wav", "audio/car2.wav"], volume:0.1,	loop:true});
-var step1 = new Howl({urls: ["audio/step1.wav", "audio/step1.wav"], volume:0.1,	loop:true});
-var step2 = new Howl({urls: ["audio/step2.wav", "audio/step2.wav"], volume:0.1,	loop:true});
-var splat = new Howl({urls: ["audio/splat.wav", "audio/splat.wav"], volume:0.1});
-var squish = new Howl({urls: ["audio/squish.wav", "audio/squish.wav"], volume:0.1});
-var crash = new Howl({urls: ["audio/crash.wav", "audio/crash.wav"], volume:0.1});
+imageLoader.queueImage("splat");
+
+var car1Sfx = new Howl({urls: ["audio/car1.wav", "audio/car1.mp3"], volume:0.1, loop:true});
+var car2Sfx = new Howl({urls: ["audio/car2.wav", "audio/car2.mp3"], volume:0.1,	loop:true});
+var car3Sfx = new Howl({urls: ["audio/car3.wav", "audio/car3.mp3"], volume:0.1, loop:true});
+var step1 = new Howl({urls: ["audio/step1.wav", "audio/step1.mp3"], volume:0.1,	loop:true});
+var carO = new Howl({urls: ["audio/carO.wav", "audio/carO.mp3"], volume:0.5});
+var carC = new Howl({urls: ["audio/carC.wav", "audio/carC.mp3"], volume:0.5});
+var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.mp3"], volume: 0.1});
+//var step = new Howl({urls: ["audio/step.wav", "audio/step.mp3"], volume:0.1,	loop:true});
+//var step2 = new Howl({urls: ["audio/step2.wav", "audio/step2.wav"], volume:0.1,	loop:true});
+//var splat = new Howl({urls: ["audio/splat.wav", "audio/splat.wav"], volume:0.1});
+//var squish = new Howl({urls: ["audio/squish.wav", "audio/squish.wav"], volume:0.1});
+var crush = new Howl({urls: ["audio/crush.wav", "audio/crush.mp3"], volume:0.1});
+var crash = new Howl({urls: ["audio/crash.wav", "audio/crash.mp3"], volume:0.1});
 imageLoader.loadQueuedImages(initGame);
 
 //console.log('done!');
+
 
 var REFMULTI = 2; //1= 120hz 2 =60hz
 
 var canvas = document.getElementById("gameCanvas");
 var context = canvas.getContext("2d");
+
+var miniCanvas = document.getElementById("miniCanvas");
+var miniContext = miniCanvas.getContext("2d");
+
 var mouse = utils.captureMouse(canvas);
 
 //box2d stuff
@@ -93,7 +108,7 @@ var Intersections = [];
 var chars = [];
 var cars = [];
 
-var state = 1;
+var state = 0;
 
 function stopSound() {
 	car1Sfx.stop();
@@ -127,48 +142,8 @@ var gameState = 0;
 var cols = 52;
 var rows = 34;
 var tileSize = 256;
-//1 = building, 2 = vert, 3 = horiz, 4 = inters
-/*var map = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,7,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,8,1,1,1,1,7,3,3,12,3,3,12,3,3,8,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,6,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,11,3,3,3,3,6,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,3,3,10,12,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,7,3,3,3,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,6,3,12,3,10,3,12,3,5,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,10,3,3,6,1,1,2,1,1,1,
-1,1,1,1,1,11,3,3,3,9,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,11,3,3,3,12,3,3,3,12,3,10,3,3,3,3,11,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,6,8,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,11,3,3,3,11,3,3,3,6,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,3,6,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,7,3,10,12,3,3,12,3,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
-1,1,1,7,3,10,3,3,12,10,3,12,3,10,3,3,6,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,6,8,1,1,1,2,1,1,6,8,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,11,3,11,3,10,3,3,3,3,11,3,3,12,3,10,3,3,3,3,6,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,11,3,3,12,3,10,12,3,3,10,12,3,3,11,3,3,3,6,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,11,3,3,3,3,3,6,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,6,3,6,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,11,3,3,3,3,3,3,6,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,6,3,3,8,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,6,3,3,10,3,3,10,3,3,3,5,1,1,1,1,1,6,3,3,10,3,3,3,3,3,3,10,3,3,10,3,3,3,3,3,3,10,3,3,3,3,3,10,3,3,5,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];*/
-
 
 var map = [27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 33, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 4, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 5, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 20, 36, 19, 20, 11, 19, 23, 20, 11, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 36, 22, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 36, 36, 36, 36, 36, 8, 10, 10, 10, 6, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 8, 10, 10, 10, 10, 6, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 19, 20, 36, 19, 20, 11, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 15, 16, 16, 13, 11, 22, 25, 25, 21, 8, 9, 10, 10, 10, 1, 10, 10, 10, 10, 6, 22, 21, 36, 22, 21, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 7, 10, 9, 10, 10, 7, 6, 15, 16, 13, 11, 19, 23, 23, 20, 8, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 3, 5, 15, 13, 11, 22, 18, 18, 24, 11, 19, 23, 23, 23, 20, 11, 12, 12, 12, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 25, 25, 18, 24, 11, 26, 18, 24, 12, 11, 12, 12, 11, 36, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 14, 14, 14, 8, 10, 10, 10, 9, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 18, 18, 24, 11, 22, 21, 36, 36, 22, 21, 11, 26, 18, 24, 17, 11, 17, 17, 11, 36, 22, 25, 24, 8, 10, 10, 10, 10, 10, 1, 10, 10, 9, 2, 36, 19, 20, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 26, 18, 24, 8, 10, 10, 10, 10, 10, 10, 6, 22, 25, 21, 14, 11, 14, 14, 11, 36, 36, 36, 14, 11, 19, 23, 23, 23, 20, 11, 12, 12, 11, 36, 19, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 22, 25, 21, 11, 19, 23, 23, 23, 23, 20, 8, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 14, 14, 11, 19, 18, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 6, 26, 18, 18, 18, 18, 24, 11, 19, 23, 23, 20, 11, 27, 27, 11, 19, 23, 23, 20, 8, 10, 10, 10, 9, 10, 7, 10, 10, 6, 22, 25, 25, 21, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 15, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 25, 21, 11, 27, 27, 11, 22, 25, 25, 21, 11, 19, 23, 20, 11, 19, 23, 23, 20, 8, 10, 10, 9, 10, 1, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 9, 10, 7, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 26, 18, 18, 24, 11, 19, 20, 11, 12, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 15, 16, 16, 16, 16, 13, 11, 15, 13, 11, 15, 16, 16, 13, 11, 26, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 11, 14, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 19, 23, 20, 4, 10, 10, 7, 10, 10, 7, 5, 19, 23, 20, 11, 22, 25, 21, 11, 22, 25, 25, 21, 8, 10, 10, 1, 10, 6, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 23, 20, 11, 26, 18, 24, 8, 10, 10, 10, 7, 10, 9, 10, 10, 6, 19, 20, 11, 12, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 20, 11, 19, 20, 11, 22, 21, 11, 14, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 26, 18, 18, 18, 24, 11, 26, 24, 8, 10, 10, 7, 10, 7, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 22, 21, 11, 19, 23, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 8, 10, 10, 10, 6, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 8, 10, 10, 10, 10, 10, 7, 10, 10, 6, 15, 16, 16, 16, 16, 13, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 15, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 15, 16, 16, 16, 16, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 3, 10, 10, 10, 10, 7, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 2, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 35, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27];
-
-
-
-
 
 var colMap = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -228,7 +203,8 @@ function Hobo(x, y) {
 	this.crackSmoked = 0;
 	this.slowAmount = 0;
 	this.smokedCrack = false;	
-	
+	this.carX = this.x;
+	this.carY = this.y;
 	this.count1 = 0;
 	this.maxCount = 2500
 	this.count2 = this.maxCount;
@@ -247,6 +223,7 @@ function Hobo(x, y) {
 	this.bodyDef.linearDamping = 1.0;
 	
 	this.fixDef.shape = new b2CircleShape(0.5);
+	this.radius = 25;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
 	
@@ -273,12 +250,7 @@ function Hobo(x, y) {
 	
 }
 
-var PosX = Player.x;
-var PosY = Player.y;
-var oldPosX = Player.x;
-var oldPosY = Player.y;
-var newPosX = Player.x;
-var newPosY = Player.y;
+var carOrientation = Player.orientation;
 	
 Hobo.prototype.draw = function() {
 	//draw hobo
@@ -286,82 +258,13 @@ Hobo.prototype.draw = function() {
 	context.save();
 	
 	context.translate(canvas.width/2, canvas.height/2);
-	context.rotate(this.orientation + (Math.PI/2));
-	
-	/*context.lineWidth="4";
-	context.strokeStyle="red";
-	context.rect(-this.width/2,-this.height/2,this.width, this.height);
-	context.stroke();
-	context.rect(-this.width/2,-this.height/2, 5, 10);
-	context.stroke();
-	*/
-	//console.log(this.x);
-	
-	/*context.beginPath();
-	context.fillStyle = "red"
-	context.arc(0,0, 15, 0, 2 * Math.PI);
-	context.fill();
-	context.closePath()
-	context.beginPath()
-	context.fillStyle = "black"
-	context.moveTo(1,0);
-	context.lineTo(1,16);
-	context.lineTo(-1,16);
-	context.lineTo(-1,0);
-	context.closePath();
-	context.fill();*/
+	context.rotate(Player.orientation + (Math.PI/2));
 	
 	if (state == 1) {
 		//var img=document.getElementById("car");
 		//context.drawImage(img,-16,-32);
 		context.drawImage(imageLoader.images["car2"],-16,-32);
 	} else {
-		//var img=document.getElementById("player");
-		//context.drawImage(imageLoader.images["player"],-16,-16);
-		//context.drawImage(imageLoader.images["walksheet"], currentFrame * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
-		
-		//var vel = Player.Body.GetLinearVelocity();
-		
-		//var speed = vel.Normalize();
-		
-		//console.log(vel);
-		//var velCurrent = (vel.x * vel.y)+.5;
-		/*
-		if (speed >= .75) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		} else if (speed <= -.75) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		}else {
-			context.drawImage(imageLoader.images["player"],-16,-16);
-		}*/
-		
-		
-		
-		
-		PosX = Player.x;
-		PosY = Player.y;
-		
-		oldPosX = Player.x;
-		oldPosY = Player.y;
-		//var newPosX = Player.x;
-		//var newPosY = Player.y;
-		
-		var dx = newPosX - oldPosX,
-			dy = newPosY - oldPosY,
-			dist = Math.sqrt(dx * dx + dy * dy);
-			
-		/*if (dist >= .5) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		} else {
-			context.drawImage(imageLoader.images["player"],-16,-16);
-		}*/
-		
-		
-//var frameTimeSeconds = 1 / 7;
-		
-		newPosX = Player.x;
-		newPosY = Player.y;
-		
 		if (pSpeed <= .25) {
 			context.drawImage(imageLoader.images["player"],-16,-16);
 			//console.log('Stopped');
@@ -377,34 +280,8 @@ Hobo.prototype.draw = function() {
 				frameTimeSeconds = 1 / 4;
 			}
 		}
-		
-		
-		/*if (pSpeed >= 1) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-			console.log('Fast');
-		} else if (pSpeed >= 0.1 && pSpeed <=0.9) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-			console.log('Medium');
-		} else {
-			context.drawImage(imageLoader.images["player"],-16,-16);
-			console.log('Stopped');
-		}*/
-		
-		/*
-		if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		} else if ((oldPosX - newPosX) >=.5 || (oldPosY - newPosY) >=.5) {
-			context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-		} else {
-			context.drawImage(imageLoader.images["player"],-16,-16);
-		}*/
-			
-		//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 	}
-	
-	
 	context.restore();
-
 }
 
 //force = new b2Vec2(0,0);
@@ -413,31 +290,66 @@ var canPlayCrash = true;
 var crashDelayMS = 500;
 var canPlaySplat = true;
 var splatDelayMS = 200;
+var score = 0;
+var enterable = false;
+
 Hobo.prototype.update = function(name) {
+	//console.log(Agents.length);
 	
+	
+	
+	for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
+		//console.log(enemy);
+		if (Agents.length > 0) {
+		if (utils.areColliding(Player.x, Player.y, Player.radius, Agents[enemy].x, Agents[enemy].y, Agents[enemy].radius)) {
+			//console.log('hit');
+		}
+		}
+	}
 	var bodily = this.Body.GetContactList();
 	if(bodily) {
 		do {
-			if(bodily.other.GetUserData()){ //if we are enemy it returns 1
+			if(bodily.other.GetUserData(Punk)){ //if we are enemy it returns 1
 				//this.Body.SetUserData(this)
+				//console.log('Punk hit');
+				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
 				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+					//console.log('hit');
 					//this.Body.SetUserData(this)
 					//console.log(bodily.other.GetUserData());
-					if (canPlaySplat) {
-						splat.play();
-						canPlaySplat = false;
-						window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+					if (state == 1) {
+						if (canPlaySplat) {
+							crush.play();
+							canPlaySplat = false;
+							window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+						}
 					}
+					//Agents.Splice(enemy,1);
+					score += 1;
 					
 					//i = bodily.other.GetUserData(this);
 					
 					//gameState = 3;
-					
+					//console.log('Hit!');
 					//destroyFixture();
 					
 					//i = bodily.other.GetUserData();
 					//Agents.splice(i,1);
 					
+				}
+				}
+			} else {
+				if(!bodily.next){
+				//console.log('Wall hit');
+				if (pSpeed >=10) {
+					if (canPlayCrash) {
+						//console.log(pSpeed);
+						crash.play();
+						canPlayCrash = false;
+						window.setTimeout(function() { canPlayCrash = true; }, crashDelayMS);
+						
+					}
+				}
 				}
 			}
 			if(!bodily.next){
@@ -453,6 +365,19 @@ Hobo.prototype.update = function(name) {
 				break;
 			} else{bodily = bodily.next}
 		}while(1)
+	}
+	/*
+	utils.areColliding = function(x1, y1, radius1, x2, y2, radius2) {
+	return utils.getDistance(x1, y1, x2, y2) <= radius1 + radius2;
+	}
+	*/
+	for (var car = cars.length - 1; car >= 0; --car) {
+		if (utils.areColliding(this.x,this.y, this.radius,cars[car].x, cars[car].y,cars[car].radius)) {
+			//console.log('hit!');
+			enterable = true;
+		} else {
+			enterable = false;
+		}
 	}
 	
 	if (state == 1) {	//When in Car - Try to get handbrake working
@@ -555,6 +480,7 @@ Hobo.prototype.update = function(name) {
 		/*if (vel.x <= Math.abs(.5)) {
 			car1Sfx.stop();
 		}*/
+		
 		if (vel.x >= 25) {
 			vel.x = 25;
 		}
@@ -634,9 +560,12 @@ Hobo.prototype.update = function(name) {
 		pSpeed = speed;
 
 		
+		//console.log(force.x);
+		
 		
 		if (vel.x >= 7) {
 			vel.x = 7;
+			//thevec.x = 0;
 		}
 		if (vel.x <= -7) {
 			vel.x = -7;
@@ -669,6 +598,7 @@ function Punk(x, y) {
 	this.bodyDef.linearDamping = 0.5;
 	this.bodyDef.userData = 1;
 	this.fixDef.shape = new b2CircleShape(0.5);
+	this.radius = .5;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
 	this.Body.SetUserData(this)
@@ -682,6 +612,9 @@ Punk.prototype.draw = function(ox,oy) {
 	//context.strokeText(this.x + " " + this.y,canvas.height,0);
 	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 	context.rotate(this.orientation + (Math.PI/2));
+	
+	//context.drawImage(imageLoader.images["splat"],-16,-16);
+	
 	if (punkSpeed <= .25) {
 			//context.drawImage(imageLoader.images["player"],-16,-16);
 			context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
@@ -751,7 +684,14 @@ Punk.prototype.draw = function(ox,oy) {
 
 Punk.prototype.update = function() {
 	var force = new b2Vec2
-	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
+	if (state == 1) {	
+		if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
+			force = flee(this, Player.x, Player.y);
+		}
+	} else {
+		/*if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200){
+			force = flee(this, Player.x, Player.y);
+		}*/
 		force = flee(this, Player.x, Player.y);
 	}
 	//lostsight += 1*REFMULTI
@@ -869,6 +809,7 @@ function spawnController() {
 				var d = utils.getRandomInteger(0, 256);
 				Agents.push(new Punk(256 + c, 256 + d));
 		}*/
+		
 		for(i = 0; i < 100; i++){ //make punks
 			var a = utils.getRandomInteger(0, Roads.length - 1);
 			var b = Roads[a];
@@ -880,8 +821,10 @@ function spawnController() {
 	}
 	this.count = 0;
 }
+
 carSound = false;
 stepSound = false;
+
 //KEY FUNCTIONS
 function onKeyDown(e) {
 	switch(e.keyCode) {
@@ -913,10 +856,34 @@ function onKeyDown(e) {
           break;		  
 	};
 }
+inCar = false;
 function onKeyUp(e) {
 	switch(e.keyCode) {
 		case 69: // E
-			if (state == 1) {
+			if (enterable) {
+				state = 1;
+				inCar = true;
+				enterable = false;
+				//cars.splice(1,1);
+				cars = [];
+				carO.play();
+				//console.log(cars.length);
+				
+			} else {
+				if (state == 1) {
+					state = 0;
+					inCar = false;
+					carOrientation = Player.orientation;
+					carC.play();
+				}
+				//car1Sfx.stop();
+			}			
+			/*
+			if (inCar) {
+				state = 0;
+				//enterable = true;
+			}*/
+			/*if (state == 1) {
 				state = 0;
 				force.x = 0;
 				force.y = 0;
@@ -925,7 +892,7 @@ function onKeyUp(e) {
 			} else if (state == 0) {
 				state = 1;
 				//step1.stop();
-			}
+			}*/
 			break;
 		case 37:      //left
 			force.x = 0;
@@ -973,90 +940,56 @@ function onMouseUp(e) {
 drawn = false;
 built = false;
 //1 = building, 2 = vert, 3 = horiz, 4 = inters
+//var i = 36;
+var roads1 = 2;
+var bldg = 12;
+var roads2 = 28;
+
 function buildMap(){
 	
-	if (!built) {
+	//if (!built) {
 		for (var ii = 0; ii < rows; ii++){
 			for(var kk = 0; kk < cols; kk++){
 				var indexLoc = kk + ii*cols;
+				var i = map[indexLoc];
+				//console.log('map build');
+				//console.log(i);
+				/*while (map[indexLoc] >= 1 && map[indexLoc] <= 11) {
+					//i++;
+					console.log(i);
+					//Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+					i++;
+				}*/
+				//console.log(indexLoc);
 				
-				if (map[indexLoc] == 1){
+				if (map[indexLoc] == 1) {
 					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,1));
 					built = true;
-				}	else if (map[indexLoc] == 2) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,2));
-				}	else if (map[indexLoc] == 3) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,3));
-				}	else if (map[indexLoc] == 4) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,4));
-				}	else if (map[indexLoc] == 5) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,5));
-				}	else if (map[indexLoc] == 6) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,6));
-				}	else if (map[indexLoc] == 7) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,7));
-				}	else if (map[indexLoc] == 8) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,8));
-				}	else if (map[indexLoc] == 9) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,9));
-				}	else if (map[indexLoc] == 10) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,10));
-				}	else if (map[indexLoc] == 11) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,11));
-				}	else if (map[indexLoc] == 12) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,12));
-				}	else if (map[indexLoc] == 13) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,13));
-				}	else if (map[indexLoc] == 14) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,14));
-				}	else if (map[indexLoc] == 15) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,15));
-				}	else if (map[indexLoc] == 16) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,16));
-				}	else if (map[indexLoc] == 17) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,17));
-				}	else if (map[indexLoc] == 18) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,18));
-				}	else if (map[indexLoc] == 19) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,19));
-				}	else if (map[indexLoc] == 20) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,20));
-				}	else if (map[indexLoc] == 21) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,21));
-				}	else if (map[indexLoc] == 22) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,22));
-				}	else if (map[indexLoc] == 23) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,23));
-				}	else if (map[indexLoc] == 24) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,24));
-				}	else if (map[indexLoc] == 25) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,25));
-				}	else if (map[indexLoc] == 26) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,26));	
-				}	else if (map[indexLoc] == 27) {
-					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,27));
-				}	else if (map[indexLoc] == 28) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,28));
-				}	else if (map[indexLoc] == 29) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,29));
-				}	else if (map[indexLoc] == 30) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,30));
-				}	else if (map[indexLoc] == 31) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,31));
-				}	else if (map[indexLoc] == 32) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,32));
-				}	else if (map[indexLoc] == 33) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,33));
-				}	else if (map[indexLoc] == 34) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,34));
-				}	else if (map[indexLoc] == 35) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,35));
-				}	else if (map[indexLoc] == 36) {
-					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,36));
+				} else if (map[indexLoc] >= 2 && map[indexLoc] <= 11) {
+					//if (map[indexLoc] >= 1 && map[indexLoc] <= 11) {
+					//console.log('map build');
+					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+					//i--;
+					//roads1++;
+					//i++;
+					//console.log(i);
+					//built = true;
+				} else if (map[indexLoc] >= 12 && map[indexLoc] <= 27) {
+					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+					//bldg++;
+					//i++;
+					//built = true;
+				} else if (map[indexLoc] >= 28 && map[indexLoc] <= 36) {
+					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+					//roads2++;
+					//i++;
 				}
+				//built = true;
+				//console.log(built);
+				i--;
 			}
 		}
-	}
+	//}
 }
 
 function mapObject(x, y, h, w, t) {
@@ -1293,28 +1226,33 @@ function drawCircle(x, y, radius) {
 	context.restore();
 }
 //AGENT
-function Agent() {
-	this.x = canvas.width/2;
-	this.y = canvas.height/2;
+function Agent(x,y) {
+	this.x = x;
+	this.y = y;
 	this.orientation = 0;
 	this.rotation = 0;
 	this.alpha = .5;
 	this.scale = 1;
 	
-	this.vx = 0;
-	this.vy = 0;
-	this.speed = Math.sqrt(vx * vx + vy * vy);
+	//this.vx = 0;
+	//this.vy = 0;
+	//this.speed = Math.sqrt(vx * vx + vy * vy);
 	this.maxSpeed = 1;
 	this.maxAcceleration = 1.25;
 	
 	this.radius = 25;
+	
 	//Bullet Draw
 	this.drawBul = function() {
 		context.save();
 
 		//context.translate(canvas.width/2, canvas.height/2);
-		context.translate(this.x, this.y);
-		context.rotate(this.orientation);
+		
+		
+		//context.translate(this.x, this.y);
+		//context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		//context.rotate(this.orientation);
 		
 		context.lineWidth = 2;
 		context.strokeStyle = "yellow";
@@ -1336,6 +1274,25 @@ function Agent() {
 		context.stroke();
 		context.restore();
 	}
+	
+	this.drawCar = function() {
+
+			context.save();
+			//context.translate(this.x+canvas.width/2,this.y+canvas.height/2);
+			//context.translate(Math.floor(this.x), Math.floor(this.y));
+			//context.translate(canvas.width/2, canvas.height/2);
+			//context.translate(Math.floor(this.x-Player.x+canvas.width/2), Math.floor(this.y-Player.y+canvas.height/2));
+			
+			context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+			context.rotate(carOrientation + (Math.PI/2));
+			
+				//context.rotate(Player.orientation + (Math.PI/2));
+			
+			context.drawImage(imageLoader.images["car2"],-16,-32);
+			//console.log(this.x);
+			context.restore();
+		
+	}
 }
 
 //BULLET FUNCTION
@@ -1350,10 +1307,10 @@ function updateBullets() {
 	
 	bullRot = mouseOrientation;//Player.orientation;
 	
-	/*if (Player.isFiring && Player.canFire) {
+	if (Player.isFiring && Player.canFire) {
 		var bullet = new Agent();
-		bullet.x = canvas.width/2;//Player.x;
-		bullet.y = canvas.height/2;//Player.y;//-5;
+		bullet.x = Player.x;
+		bullet.y = Player.y;//-5;
 		bullet.radius = 2;
 		bullets.push(bullet);
 		bullRots.push(bullRot);
@@ -1364,7 +1321,7 @@ function updateBullets() {
 		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
 		//ship.canFire = false;
 		//setTimeout(function(){ship.canFire = true},500);
-	}*/
+	}
 	
 	for (var i = bullets.length - 1; i >= 0; --i) {
 		for (var i = bullRots.length - 1; i >= 0; --i) {	
@@ -1429,13 +1386,33 @@ function drawBullets() {
 		}
 	}
 }
+var cars = [];
+
+var enterCar = new Agent(Player.x+20,Player.y+20);
+cars.push(enterCar);
+
+function updateCar() {
+		//console.log(cars.length);
+		if (cars.length < 1 && !inCar) {
+			//console.log('respawn');
+			
+			var enterCar = new Agent(Player.x,Player.y);
+			cars.push(enterCar);
+		}
+}
+function drawCar() {
+	for (var i = 0; i < cars.length; ++i) {
+		cars[i].drawCar();
+	}
+}
+
 
 //BULLETS
 var bullets = [];
 var bullRot = 0;
 var bullRots = [];
 var bullPos = [];
-var bullSpeed = 10;
+var bullSpeed = 20;
 var bulletFireDelayMs = 200;
 
 //**********************
@@ -1599,8 +1576,8 @@ var targetX2 = mouse.x;//waypoints[points].x;
 var targetY2 = mouse.y;//waypoints[points].y; 
  
 // image data
-var frameWidth = 96;
-var frameHeight = 32;
+var frameWidth = 96;//Math.min(1, Math.floor(96)); //96;
+var frameHeight = 32;//Math.min(1, Math.floor(3));//32;
 
  // animation data
 var startFrame = 0;
@@ -1629,6 +1606,9 @@ function detectViewportChange(){
 		mouse = utils.captureMouse(canvas);
 	}
 }
+
+
+
 function initGame() {
 	detectViewportChange();
 	window.addEventListener("keydown", onKeyDown, false);
@@ -1636,12 +1616,14 @@ function initGame() {
 	window.addEventListener("mousedown", onMouseDown, false);
 	window.addEventListener("mouseup", onMouseUp, false);
 	
+	
+	
 	(function tick() {
 		//context.clearRect(0, 0, canvas.width, canvas.height);
 		//window.requestAnimationFrame(tick);
 		detectViewportChange();
 		context.clearRect(0, 0, canvas.width, canvas.height);
-		
+		//miniContext.drawImage(imageLoader.images["mapM2"],miniCanvas.width,miniCanvas.height);
 		if(gameState == 0) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(imageLoader.images["title"],0,0);
@@ -1768,12 +1750,14 @@ function initGame() {
 				}
 			} else {
 				//console.log('Sound Off!');
-				car1Sfx.fadeOut(0, 300);
-				step1.fadeOut(0, 300);
-				//step1.fadeOut(0, 300);
-				//car1Sfx.stop();
-				carSound = false;
-				stepSound = false;
+				if (chars.length <= 0) {
+					car1Sfx.fadeOut(0, 300);
+					step1.fadeOut(0, 300);
+					//step1.fadeOut(0, 300);
+					//car1Sfx.stop();
+					carSound = false;
+					stepSound = false;
+				}
 			}
 			
 			//Gun.update();
@@ -1787,9 +1771,10 @@ function initGame() {
 			
 			//spawner.update();
 			
-			//updateBullets();
-			//drawBullets();
-			
+			updateBullets();
+			drawBullets();
+			updateCar();
+			drawCar();
 			//console.log(thrust);
 			//console.log(vx);
 			//console.log(state);
@@ -1798,7 +1783,8 @@ function initGame() {
 			context.fillText("frame time: " + elapsedTime, 16, 32);
 			context.fillText("frame rate: " + Math.round((1.0 / elapsedTime)), 16, 64);	
 			context.fillText("Agents Length: " + Agents.length, 16, 98);	
-			context.fillText("Punks: " + Agents.length, 16, 128);	
+			context.fillText("Punks: " + Agents.length, 16, 128);
+			context.fillText("Score: " + score, canvas.width/2, 32);				
 			//console.log(Agents.length);
 			//requestAnimationFrame(tick);
 		}
