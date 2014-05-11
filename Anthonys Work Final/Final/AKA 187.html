@@ -32,7 +32,7 @@
 <script>
 
 //console.log('start');
-//imageLoader.queueImage("car");
+imageLoader.queueImage("car");
 imageLoader.queueImage("car2");
 imageLoader.queueImage("player");
 imageLoader.queueImage("spritesheet");
@@ -41,7 +41,9 @@ imageLoader.queueImage("walksheet2");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
 imageLoader.queueImage("splat");
-
+imageLoader.queueImage("map_full");
+imageLoader.queueImage("map_full2");
+imageLoader.queueImage("map_full3");
 var car1Sfx = new Howl({urls: ["audio/car1.wav", "audio/car1.mp3"], volume:0.1, loop:true});
 var car2Sfx = new Howl({urls: ["audio/car2.wav", "audio/car2.mp3"], volume:0.1,	loop:true});
 var car3Sfx = new Howl({urls: ["audio/car3.wav", "audio/car3.mp3"], volume:0.1, loop:true});
@@ -185,7 +187,7 @@ function SteeringForce() {
 	this.y = 0;
 }
 
-
+var steeringForce = new SteeringForce();
 
 //******************
 //*	    ACTORS     *
@@ -263,7 +265,7 @@ Hobo.prototype.draw = function() {
 	if (state == 1) {
 		//var img=document.getElementById("car");
 		//context.drawImage(img,-16,-32);
-		context.drawImage(imageLoader.images["car2"],-16,-32);
+		context.drawImage(imageLoader.images["car"],-16,-32);
 	} else {
 		if (pSpeed <= .25) {
 			context.drawImage(imageLoader.images["player"],-16,-16);
@@ -313,30 +315,39 @@ Hobo.prototype.update = function(name) {
 				//this.Body.SetUserData(this)
 				//console.log('Punk hit');
 				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
-				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
-					//console.log('hit');
-					//this.Body.SetUserData(this)
-					//console.log(bodily.other.GetUserData());
-					if (state == 1) {
-						if (canPlaySplat) {
-							crush.play();
-							canPlaySplat = false;
-							window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+						//console.log(bodily.contact.IsTouching(Punk));
+						//console.log('hit');
+						//this.Body.SetUserData(this)
+						//console.log(bodily.other.GetUserData());
+						//crushed = bodily.other.GetUserData(this);
+						//Agents[enemy].x = -10000;
+						if (state == 1) {
+							if (canPlaySplat) {
+								//crushed = bodily.other.GetUserData(this);
+								//Punk.x = -9001;
+								//Punk.y = -9001;
+								//var coin = this.coins.shift();
+								//total += coin.GetUserData();
+								//this.world.DestroyBody(crushed);
+								//Agents.Splice(enemy,1);
+								//this.y = -10000;
+								//console.log(this.Body.GetContactList());
+								crush.play();
+								canPlaySplat = false;
+								window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+								score += 1;
+							}
 						}
-					}
 					//Agents.Splice(enemy,1);
-					score += 1;
-					
-					//i = bodily.other.GetUserData(this);
-					
+					i = bodily.other.GetUserData(this);
 					//gameState = 3;
 					//console.log('Hit!');
-					//destroyFixture();
-					
+					//destroyFixture();		
 					//i = bodily.other.GetUserData();
 					//Agents.splice(i,1);
-					
-				}
+					//i.x = -100000;
+					}
 				}
 			} else {
 				if(!bodily.next){
@@ -383,26 +394,10 @@ Hobo.prototype.update = function(name) {
 	if (state == 1) {	//When in Car - Try to get handbrake working
 		//keyboard input for our hobo
 		force = new b2Vec2(0,0);
-		/*if(chars.length > 0) {
-			while (!carSound) {
-					//car1Sfx.fadeIn(.1, 10);
-					
-					car1Sfx.play();
-					carSound = true;
-			}
-		}*/
 		if(chars.length === 1 ) { //if one key is pressed
-			
-			/*while (!carSound) {
-					//car1Sfx.fadeIn(.1, 10);
-					
-					car1Sfx.play();
-					carSound = true;
-			}*/
 			if (chars[0] == 87) { //W
 				force.x = 0;
 				force.y = -turnspeed;
-				//car1Sfx.play();
 			}
 			else if (chars[0] == 65) { //A
 				force.x = -turnspeed;
@@ -417,19 +412,6 @@ Hobo.prototype.update = function(name) {
 				force.x = turnspeed;
 				force.y = 0;
 			}
-			/*else if (chars[0] == 69) { //E
-				if (state == 1) {
-					state = 0;
-				} else if (state == 0) {
-					state = 1;
-				}
-			}*/
-			/*if (!carSound) {
-				car1Sfx.fadeIn(.1, 10);
-				car1Sfx.play();
-				carSound = true;
-			}*/
-
 		}
 		else if(chars.length >= 2) { //if two keys are pressed
 			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
@@ -469,17 +451,6 @@ Hobo.prototype.update = function(name) {
 		this.y = thevec.y * SCALE;
 		var speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);//vel.Normalize();
 		pSpeed = speed;
-		
-		//console.log(pSpeed);
-		
-		//car1Sfx.play();
-		/*if (!carSound) {
-			car1Sfx.play();
-			carSound = true;
-		}*/
-		/*if (vel.x <= Math.abs(.5)) {
-			car1Sfx.stop();
-		}*/
 		
 		if (vel.x >= 25) {
 			vel.x = 25;
@@ -565,7 +536,6 @@ Hobo.prototype.update = function(name) {
 		
 		if (vel.x >= 7) {
 			vel.x = 7;
-			//thevec.x = 0;
 		}
 		if (vel.x <= -7) {
 			vel.x = -7;
@@ -583,7 +553,7 @@ punkSpeed = 0;
 function Punk(x, y) {
 	this.x = x;
 	this.y = y;
-	this.orientation = 0;
+	this.orientation = utils.getRandomInteger(0,180);//0;
 	this.maxAcceleration = .2;
 	var lastseenx = 0, lastseeny = 0, lastsight = 0;
 	//begin initialization of BOX2D object
@@ -602,8 +572,17 @@ function Punk(x, y) {
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
 	this.Body.SetUserData(this)
+	
+		// arrive radius for beginning to slow down
+	this.slowRadius = 64;
+	
+	// used for wander behavior
+	this.wanderRadius = 20;
+	this.wanderOffset = 128;
+	this.wanderRate = .55;
+	this.wanderAngle = 0;
 }
-
+var carnage = true;
 Punk.prototype.draw = function(ox,oy) {
 	//console.log('test1');
 	context.save();
@@ -631,68 +610,53 @@ Punk.prototype.draw = function(ox,oy) {
 				frameTimeSeconds = 1 / 4;
 			}
 		}
-	/*context.beginPath();
-	context.fillStyle = "magenta"
-	context.arc(0,0, 15, 0, 2 * Math.PI);
-	context.fill();
-	context.closePath();
-	context.beginPath();
-	context.fillStyle = "black";
-	context.moveTo(1,0);
-	context.lineTo(1,16);
-	context.lineTo(-1,16);
-	context.lineTo(-1,0);
-	context.closePath();
-	context.fill();
-	*/
 	context.restore();
 	context.save()
 	
 	//Arrow
-	if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
-		//console.log('test2');
-		context.fillStyle = "magenta";
-		context.translate(canvas.width/2, canvas.height/2);
-		context.beginPath();
-		context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
-		context.translate(0, -200);
-		context.moveTo(0,0);
-		context.lineTo(7,7);
-		context.lineTo(-7,7);
-		context.closePath();
-		context.fill();
-		context.restore();
+	if (carnage) {
+		if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
+			//console.log('test2');
+			context.fillStyle = "white";
+			context.translate(canvas.width/2, canvas.height/2);
+			context.beginPath();
+			context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
+			context.translate(0, -200);
+			context.moveTo(0,0);
+			context.lineTo(7,7);
+			context.lineTo(-7,7);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	} else {
+		if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 1 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 10000){
+			//console.log('test2');
+			context.fillStyle = "white";
+			context.translate(canvas.width/2, canvas.height/2);
+			context.beginPath();
+			context.rotate(-Math.atan2(wpTargetX - Player.x, wpTargetY - Player.y) + Math.PI);
+			context.translate(0, -200);
+			context.moveTo(0,0);
+			context.lineTo(7,7);
+			context.lineTo(-7,7);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
 	}
-	
-	
-		/*if (pSpeed <= .25) {
-			context.drawImage(imageLoader.images["player"],-16,-16);
-			console.log('Stopped');
-			frameTimeSeconds = 1 / 7;
-		} else {
-			if (pSpeed >= 1) {
-				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-				console.log('Fast');
-				frameTimeSeconds = 1 / 7;
-			} else {
-				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
-				console.log('Medium');
-				frameTimeSeconds = 1 / 4;
-			}
-		}*/
 }
 
-Punk.prototype.update = function() {
+Punk.prototype.update = function(SteeringForce) {
 	var force = new b2Vec2
 	if (state == 1) {	
 		if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
-			force = flee(this, Player.x, Player.y);
+			force = evade(this, Player.x, Player.y);
+		} else {
+			force = wander(this, steeringForce);
 		}
 	} else {
-		/*if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200){
-			force = flee(this, Player.x, Player.y);
-		}*/
-		force = flee(this, Player.x, Player.y);
+		force = wander(this, steeringForce);//flee(this, Player.x, Player.y);
 	}
 	//lostsight += 1*REFMULTI
 	force.x = force.x*REFMULTI;
@@ -705,15 +669,37 @@ Punk.prototype.update = function() {
 	this.y = thevec.y * SCALE;
 	var speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);//vel.Normalize();
 	punkSpeed = speed;
+	
+	if (vel.x >= 5) {
+		vel.x = 5;
+	}
+	if (vel.x <= -5) {
+		vel.x = -5;
+	}
+	if (vel.y >= 5) {
+		vel.y = 5;
+	}
+	if (vel.y <= -5) {
+		vel.y = -5;
+	}
 	/*if (Player.isFiring && Player.canFire) {
-		Agents.push(new Punk(Player.x, Player.y));
+		Agents.push(new Punk(Player.x - Player.orientation, Player.y- Player.orientation));
 		shootSfx.play();
 		Player.canFire = false;
 		//attachBulletPfx(bullet);
 		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
 	}*/
 }
-
+Punk.prototype.removeCoins = function(amount){
+	var done = false;
+	var total = 0;
+	do {
+		var coin = this.Agents.shift();
+		total += coin.GetUserData();
+		this.world.DestroyBody(coin);
+		if(total >= amount){done = true}
+	}while(!done)
+}
 //our bouncing bullets
 function Gun(x, y) {
 	this.x = x;
@@ -774,7 +760,7 @@ Gun.prototype.draw = function(ox,oy) {
 	}
 }
 
-Gun.prototype.update = function() {
+Gun.prototype.update = function(SteeringForce) {
 	var force = new b2Vec2
 	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
 		force = flee(this, Player.x, Player.y);
@@ -790,9 +776,9 @@ Gun.prototype.update = function() {
 	this.y = thevec.y * SCALE;
 	
 	console.log('Gun here!');
-	
+
 	if (Player.isFiring && Player.canFire) {
-		Guns.push(new Gun(Player.x, Player.y));
+		Guns.push(new Gun(Player.x - Player.orientation, Player.y - Player.orientation));
 		shootSfx.play();
 		Player.canFire = false;
 		//attachBulletPfx(bullet);
@@ -810,7 +796,7 @@ function spawnController() {
 				Agents.push(new Punk(256 + c, 256 + d));
 		}*/
 		
-		for(i = 0; i < 100; i++){ //make punks
+		for(i = 0; i < 30; i++){ //make punks amount
 			var a = utils.getRandomInteger(0, Roads.length - 1);
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
@@ -819,7 +805,6 @@ function spawnController() {
 			
 		}
 	}
-	this.count = 0;
 }
 
 carSound = false;
@@ -946,50 +931,23 @@ var bldg = 12;
 var roads2 = 28;
 
 function buildMap(){
-	
-	//if (!built) {
 		for (var ii = 0; ii < rows; ii++){
 			for(var kk = 0; kk < cols; kk++){
 				var indexLoc = kk + ii*cols;
 				var i = map[indexLoc];
-				//console.log('map build');
-				//console.log(i);
-				/*while (map[indexLoc] >= 1 && map[indexLoc] <= 11) {
-					//i++;
-					console.log(i);
-					//Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
-					i++;
-				}*/
-				//console.log(indexLoc);
-				
 				if (map[indexLoc] == 1) {
 					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,1));
 					built = true;
 				} else if (map[indexLoc] >= 2 && map[indexLoc] <= 11) {
-					//if (map[indexLoc] >= 1 && map[indexLoc] <= 11) {
-					//console.log('map build');
 					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
-					//i--;
-					//roads1++;
-					//i++;
-					//console.log(i);
-					//built = true;
 				} else if (map[indexLoc] >= 12 && map[indexLoc] <= 27) {
 					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
-					//bldg++;
-					//i++;
-					//built = true;
 				} else if (map[indexLoc] >= 28 && map[indexLoc] <= 36) {
 					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
-					//roads2++;
-					//i++;
 				}
-				//built = true;
-				//console.log(built);
 				i--;
 			}
 		}
-	//}
 }
 
 function mapObject(x, y, h, w, t) {
@@ -1388,7 +1346,7 @@ function drawBullets() {
 }
 var cars = [];
 
-var enterCar = new Agent(Player.x+20,Player.y+20);
+var enterCar = new Agent(Player.x+30,Player.y+30);
 cars.push(enterCar);
 
 function updateCar() {
@@ -1406,6 +1364,37 @@ function drawCar() {
 	}
 }
 
+//WAYPOINTS
+function wp(x, y){
+	this.x = x;
+	this.y = y;
+}
+
+//Waypoints number
+var points = 0;
+
+//Waypoints Array
+var waypoints = [new wp(Player.x-75,Player.y), 
+				new wp(700,100), 
+				new wp(700,500),
+				new wp(500,500),
+				new wp(500,400),
+				new wp(300,400),
+				new wp(300,500),
+				new wp(100,500)];
+
+//GET NEXT WAYPOINT
+function getNextWaypoint() {
+	points++;
+	if (points >= waypoints.length) {
+		points = 0;
+	}
+	wpTargetX = waypoints[points].x;
+	wpTargetY = waypoints[points].y;
+}
+
+var wpTargetX = waypoints[points].x;
+var wpTargetY = waypoints[points].y;
 
 //BULLETS
 var bullets = [];
@@ -1504,30 +1493,20 @@ function pursue(agent, targetX, targetY) {// move toward target future position
 	return seek(agent, targetNewX, targetNewY);
 }
 function evade(agent, targetX, targetY) {// evade away from future target position
-	var x = targetX - agent.x;
-	var y = targetY - agent.y;
-	
-	var distance = Math.sqrt(x * x + y * y);
-	
-	x = x / distance * agent.maxAcceleration;
-	y = y / distance * agent.maxAcceleration;
-	
-	steeringForce.linearX = x;
-	steeringForce.linearY = y;
-	
 	var dx = targetX - agent.x;
 	var dy = targetY - agent.y;
 	
 	var dist = Math.sqrt(dx * dx + dy *dy);
 	
-	var t = dist / targetMaxS;
-	
-	var targetNewX = targetVX * t + targetX;
-	var targetNewY = targetVY * t + targetY;
-	
-	return flee(agent, targetNewX, targetNewY, steeringForce);
-}	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return flee(agent, targetNewX, targetNewY);
+}
 function wander(agent, steeringForce) {
+
 	// perturb wander angle by a small random amount.
 	var deltaWander = Math.random() * agent.wanderRate;
 	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
@@ -1536,19 +1515,8 @@ function wander(agent, steeringForce) {
 	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
 	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
 	
-	// draw the wander circle, etc. if drawDebug is enabled.
-	/*if (drawDebug == true) {
-		drawCircle(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset, agent.wanderRadius);
-		drawCircle(targetX, targetY, 8);
-		context.moveTo(agent.x, agent.y);
-		context.lineTo(agent.x + Math.cos(agent.orientation) * agent.wanderOffset, agent.y + Math.sin(agent.orientation) * agent.wanderOffset);
-		context.lineTo(targetX, targetY);
-		context.stroke();
-	}*/
-	
-	// seek toward the target point
 	return seek(agent, targetX, targetY, steeringForce);
-}
+}	
 function separation(agent, neighbors) {
 	for (var i = 0; i < neighbors.length; ++i) {
 		var toAgentX = agent.x - neighbors[i].x;
@@ -1574,10 +1542,11 @@ var targetX = Player.x;
 var targetY = Player.y;
 var targetX2 = mouse.x;//waypoints[points].x;
 var targetY2 = mouse.y;//waypoints[points].y; 
+
  
 // image data
-var frameWidth = 96;//Math.min(1, Math.floor(96)); //96;
-var frameHeight = 32;//Math.min(1, Math.floor(3));//32;
+var frameWidth = 96;
+var frameHeight = 32;
 
  // animation data
 var startFrame = 0;
@@ -1607,7 +1576,96 @@ function detectViewportChange(){
 	}
 }
 
+cameraWidth = 192;
+cameraHeight = 192;
 
+function drawHud() {
+	context.save();
+	context.fillStyle = "black";
+	context.fillRect(60,canvas.height-260,199,199);
+	context.restore();
+	context.save();
+	//context.drawImage(imageLoader.images["map_full"],32,canvas.height-294);
+	//context.translate(canvas.width/2, canvas.height/2);
+	//context.translate(Math.floor(this.x-Player.x+canvas.width/2), Math.floor(this.y-Player.x+canvas.height/2));
+	//context.drawImage(imageLoader.images["map_full2"], Player.x/33.28, Player.y/33.22, cameraWidth, camerHeight, 64, canvas.height-256, 192, 192);
+	context.fillStyle = "rgba(255, 255, 255, 0.5)";
+	context.fillRect(64,canvas.height-256,192,192);
+	context.restore();
+	context.save();
+	//console.log(Player.x);
+	context.drawImage(imageLoader.images["map_full3"], Player.x*.05 - 96, Player.y*.05 - 96, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
+	//context.drawImage(imageLoader.images["map_full3"], Player.x/canvas.width, Player.y/canvas.height, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
+	//context.drawImage(imageLoader.images["map_full3"], Player.x/13312, Player.y/8704, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
+	//context.drawImage(imageLoader.images["map_full3"], Player.x/666, Player.y/435, 666/10, 435/10, 64, canvas.height-256, 192, 192);
+	//context.drawImage(imageLoader.images["map_full3"], Player.x/666, Player.y/435, 666, 435, 64, canvas.height-256, 192, 192);
+	context.restore();
+	context.fillStyle = "black";
+	//context.rotate(Player.orientation + (Math.PI/2));
+	
+	//context.fillRect(64+91,canvas.height-165,10,10);
+	context.save();
+	context.translate(64+96,canvas.height-160)
+	context.rotate(Player.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "lightblue"
+	context.arc(0,0, 5, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath()
+	context.beginPath()
+	context.fillStyle = "black"
+	context.lineWidth = 2;
+	context.moveTo(0,0);
+	context.lineTo(0,5);
+	context.stroke();
+	context.fill();
+	context.restore();
+}
+
+function drawHeart(color){
+	context.save;
+	context.fillStyle = color;
+	context.scale(.25,.25);
+	context.beginPath();
+	context.moveTo(75,40);
+	context.bezierCurveTo(75,37,70,25,50,25);
+	context.bezierCurveTo(20,25,20,62.5,20,62.5);
+	context.bezierCurveTo(20,80,40,102,75,120);
+	context.bezierCurveTo(110,102,130,80,130,62.5);
+	context.bezierCurveTo(130,62.5,130,25,100,25);
+	context.bezierCurveTo(85,25,75,37,75,40);
+	context.fill();
+	context.restore();
+}
+function drawHud2(){
+	context.save;
+	context.translate(64, canvas.height-48)
+	drawHeart("red");
+	context.translate(68.5, canvas.height-44)
+	context.scale(.75,.75);
+	drawHeart("blue");
+	/*context.fillStyle = "red";
+	context.scale(.25,.25);
+	context.beginPath();
+	context.moveTo(75,40);
+	context.bezierCurveTo(75,37,70,25,50,25);
+	context.bezierCurveTo(20,25,20,62.5,20,62.5);
+	context.bezierCurveTo(20,80,40,102,75,120);
+	context.bezierCurveTo(110,102,130,80,130,62.5);
+	context.bezierCurveTo(130,62.5,130,25,100,25);
+	context.bezierCurveTo(85,25,75,37,75,40);
+	context.fill();*/
+	context.restore();
+}
+
+function drawWP(ox,oy) {
+	context.save();
+	context.strokeStyle = "red";
+	drawCircle(wpTargetX, wpTargetY, 20);
+	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+	
+	context.restore();
+}
 
 function initGame() {
 	detectViewportChange();
@@ -1731,14 +1789,37 @@ function initGame() {
 					//console.log('Sound on!');
 					step1.stop();
 					if (!carSound) {
-						car1Sfx.fadeIn(.1, 300);
-						car1Sfx.play();
-						//step1.fadeIn(.1, 300);
-						//step1.play();
-						carSound = true;
+						if (pSpeed < 1) {
+							car1Sfx.fadeIn(.1, 300);
+							car2Sfx.stop();
+							car3Sfx.stop();
+							car1Sfx.play();
+							//step1.fadeIn(.1, 300);
+							//step1.play();
+							carSound = true;
+						} /*else if (pSpeed >= 1 && pSpeed <= 15) {
+							car2Sfx.fadeIn(.1, 300);
+							car1Sfx.stop();
+							car3Sfx.stop();
+							car2Sfx.play();
+							//step1.fadeIn(.1, 300);
+							//step1.play();
+							carSound = true;
+						} else if (pSpeed > 15 && pSpeed <= 30) {
+							car3Sfx.fadeIn(.1, 300);
+							car1Sfx.stop();
+							car2Sfx.stop();
+							car3Sfx.play();
+							//step1.fadeIn(.1, 300);
+							//step1.play();
+							carSound = true;
+						}*/
 					}
+					
 				} else if (state == 0) {
 					car1Sfx.stop();
+					car2Sfx.stop();
+					car3Sfx.stop();
 					if (!stepSound) {
 						step1.fadeIn(.1, 300);
 						step1.play();
@@ -1752,14 +1833,19 @@ function initGame() {
 				//console.log('Sound Off!');
 				if (chars.length <= 0) {
 					car1Sfx.fadeOut(0, 300);
-					step1.fadeOut(0, 300);
+					//step1.fadeOut(0, 300);
+					//car1Sfx.stop();
+					//car2Sfx.stop();
+					//car3Sfx.stop();
+					
+					step1.stop();
 					//step1.fadeOut(0, 300);
 					//car1Sfx.stop();
 					carSound = false;
 					stepSound = false;
 				}
 			}
-			
+			//console.log(pSpeed);
 			//Gun.update();
 			//Guns.draw(Player.x, Player.y);
 			
@@ -1767,7 +1853,7 @@ function initGame() {
 			//console.log(bullets.length);
 			//console.log(targetX);
 			
-			drawCircle(mouse.x, mouse.y, 12);
+			//drawCircle(mouse.x, mouse.y, 12);
 			
 			//spawner.update();
 			
@@ -1775,10 +1861,21 @@ function initGame() {
 			drawBullets();
 			updateCar();
 			drawCar();
+			//console.log(points);
+			if (wpTargetX != -1) {
+				//drawWP(Player.x, Player.y);
+				//context.strokeStyle = "red";
+				//drawCircle(wpTargetX, wpTargetY, 8);
+				if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 20) {	
+					getNextWaypoint();
+				}
+			}
+			//console.log(wpTargetX);
+			
 			//console.log(thrust);
 			//console.log(vx);
 			//console.log(state);
-			context.fillStyle = "black";
+			context.fillStyle = "white";
 			context.font = '30pt Calibri';
 			context.fillText("frame time: " + elapsedTime, 16, 32);
 			context.fillText("frame rate: " + Math.round((1.0 / elapsedTime)), 16, 64);	
@@ -1787,6 +1884,8 @@ function initGame() {
 			context.fillText("Score: " + score, canvas.width/2, 32);				
 			//console.log(Agents.length);
 			//requestAnimationFrame(tick);
+			drawHud();
+			drawHud2();
 		}
 		if(gameState == 2) {
 			context.save();
