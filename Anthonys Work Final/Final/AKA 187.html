@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
+<html><    ><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
 <style>
 	body { 
 		background-color:black;
@@ -271,13 +271,13 @@ Hobo.prototype.update = function(name) {
 						//Agents[enemy].x = -10000;
 						if (state == 1) {
 							if (canPlaySplat) {
-								//crushed = bodily.other.GetUserData(this);
+								crushed = bodily.other.GetUserData();
 								//Punk.x = -9001;
 								//Punk.y = -9001;
 								//var coin = this.coins.shift();
 								//total += coin.GetUserData();
-								//this.world.DestroyBody(crushed);
-								//Agents.Splice(enemy,1);
+								world.DestroyBody(crushed.Body);
+								Agents.splice(Agents.indexOf(crushed),1);
 								//this.y = -10000;
 								//console.log(this.Body.GetContactList());
 								crush.play();
@@ -502,7 +502,8 @@ Hobo.prototype.update = function(name) {
 }
 punkSpeed = 0;
 //our hateable antagonists
-function Punk(x, y, t) {
+function Punk(x, y, t, i) {
+	this.indexLoc = i
 	this.x = x;
 	this.y = y;
 	this.type = t;
@@ -686,7 +687,7 @@ function Gun(x, y) {
 	this.bodyDef.position.y = this.y / SCALE;
 	this.bodyDef.linearDamping = 0.5;
 	this.bodyDef.userData = 1;
-	this.fixDef.shape = new b2CircleShape(0.5);
+	this.fixDef.shape = new b2CircleShape(0.1);
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
 	this.Body.SetUserData(this)
@@ -769,14 +770,14 @@ function spawnController() {
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1, Agents.length-1));
 		}
 		for(i = 0; i < 30; i++){ //make punks amount
 			var a = utils.getRandomInteger(0, Roads.length - 1);
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2, Agents.length-1));
 		}
 	}
 }
