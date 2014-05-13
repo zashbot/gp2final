@@ -502,8 +502,7 @@ Hobo.prototype.update = function(name) {
 }
 punkSpeed = 0;
 //our hateable antagonists
-function Punk(x, y, t, i) {
-	this.indexLoc = i
+function Punk(x, y, t) {
 	this.x = x;
 	this.y = y;
 	this.type = t;
@@ -770,14 +769,14 @@ function spawnController() {
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1, Agents.length-1));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1));
 		}
 		for(i = 0; i < 30; i++){ //make punks amount
 			var a = utils.getRandomInteger(0, Roads.length - 1);
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2, Agents.length-1));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2));
 		}
 	}
 }
