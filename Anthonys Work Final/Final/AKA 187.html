@@ -42,6 +42,7 @@ imageLoader.queueImage("walksheet3");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
 imageLoader.queueImage("splat");
+imageLoader.queueImage("phone");
 imageLoader.queueImage("map_full");
 imageLoader.queueImage("map_full2");
 imageLoader.queueImage("map_full3");
@@ -53,6 +54,9 @@ var carO = new Howl({urls: ["audio/carO.wav", "audio/carO.mp3"], volume:0.5});
 var carC = new Howl({urls: ["audio/carC.wav", "audio/carC.mp3"], volume:0.5});
 var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.mp3"], volume: 0.1});
 var checkP = new Howl({urls: ["audio/checkP.wav", "audio/checkP.mp3"], volume: 0.1});
+var phoneSfx = new Howl({urls: ["audio/phone.wav", "audio/phone.mp3"], volume: 0.1, loop: true});
+var hello = new Howl({urls: ["audio/hello.wav", "audio/hello.mp3"], volume:0.1});
+var carnageSfx = new Howl({urls: ["audio/carnage.wav", "audio/carnage.mp3"], volume:0.5});
 //var step = new Howl({urls: ["audio/step.wav", "audio/step.mp3"], volume:0.1,	loop:true});
 //var step2 = new Howl({urls: ["audio/step2.wav", "audio/step2.wav"], volume:0.1,	loop:true});
 //var splat = new Howl({urls: ["audio/splat.wav", "audio/splat.wav"], volume:0.1});
@@ -111,6 +115,7 @@ var Roads = [];
 var Intersections = [];
 var chars = [];
 var cars = [];
+var phones = [];
 
 var state = 0;
 
@@ -148,41 +153,6 @@ var rows = 34;
 var tileSize = 256;
 
 var map = [27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 33, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 4, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 5, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 20, 36, 19, 20, 11, 19, 23, 20, 11, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 36, 22, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 36, 36, 36, 36, 36, 8, 10, 10, 10, 6, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 8, 10, 10, 10, 10, 6, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 19, 20, 36, 19, 20, 11, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 15, 16, 16, 13, 11, 22, 25, 25, 21, 8, 9, 10, 10, 10, 1, 10, 10, 10, 10, 6, 22, 21, 36, 22, 21, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 7, 10, 9, 10, 10, 7, 6, 15, 16, 13, 11, 19, 23, 23, 20, 8, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 3, 5, 15, 13, 11, 22, 18, 18, 24, 11, 19, 23, 23, 23, 20, 11, 12, 12, 12, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 25, 25, 18, 24, 11, 26, 18, 24, 12, 11, 12, 12, 11, 36, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 14, 14, 14, 8, 10, 10, 10, 9, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 18, 18, 24, 11, 22, 21, 36, 36, 22, 21, 11, 26, 18, 24, 17, 11, 17, 17, 11, 36, 22, 25, 24, 8, 10, 10, 10, 10, 10, 1, 10, 10, 9, 2, 36, 19, 20, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 26, 18, 24, 8, 10, 10, 10, 10, 10, 10, 6, 22, 25, 21, 14, 11, 14, 14, 11, 36, 36, 36, 14, 11, 19, 23, 23, 23, 20, 11, 12, 12, 11, 36, 19, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 22, 25, 21, 11, 19, 23, 23, 23, 23, 20, 8, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 14, 14, 11, 19, 18, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 6, 26, 18, 18, 18, 18, 24, 11, 19, 23, 23, 20, 11, 27, 27, 11, 19, 23, 23, 20, 8, 10, 10, 10, 9, 10, 7, 10, 10, 6, 22, 25, 25, 21, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 15, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 25, 21, 11, 27, 27, 11, 22, 25, 25, 21, 11, 19, 23, 20, 11, 19, 23, 23, 20, 8, 10, 10, 9, 10, 1, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 9, 10, 7, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 26, 18, 18, 24, 11, 19, 20, 11, 12, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 15, 16, 16, 16, 16, 13, 11, 15, 13, 11, 15, 16, 16, 13, 11, 26, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 11, 14, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 19, 23, 20, 4, 10, 10, 7, 10, 10, 7, 5, 19, 23, 20, 11, 22, 25, 21, 11, 22, 25, 25, 21, 8, 10, 10, 1, 10, 6, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 23, 20, 11, 26, 18, 24, 8, 10, 10, 10, 7, 10, 9, 10, 10, 6, 19, 20, 11, 12, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 20, 11, 19, 20, 11, 22, 21, 11, 14, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 26, 18, 18, 18, 24, 11, 26, 24, 8, 10, 10, 7, 10, 7, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 22, 21, 11, 19, 23, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 8, 10, 10, 10, 6, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 8, 10, 10, 10, 10, 10, 7, 10, 10, 6, 15, 16, 16, 16, 16, 13, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 15, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 15, 16, 16, 16, 16, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 3, 10, 10, 10, 10, 7, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 2, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 35, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27];
-
-var colMap = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,7,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,3,12,3,3,3,3,12,3,3,3,3,8,1,1,1,1,7,3,3,12,3,3,12,3,3,8,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,6,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,3,3,11,3,3,3,3,6,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,3,3,10,12,3,3,3,3,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,11,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,2,1,1,1,7,3,3,3,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,11,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,6,3,12,3,10,3,12,3,5,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,10,3,3,6,1,1,2,1,1,1,
-1,1,1,1,1,11,3,3,3,9,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,11,3,3,3,12,3,3,3,12,3,10,3,3,3,3,11,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,1,1,1,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,6,8,1,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,1,1,11,3,3,3,11,3,3,3,6,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,11,3,3,3,3,11,3,3,3,3,11,3,3,3,3,3,6,1,1,2,1,1,1,
-1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,7,3,10,12,3,3,12,3,11,3,3,3,3,6,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,11,3,3,6,1,1,1,
-1,1,1,7,3,10,3,3,12,10,3,12,3,10,3,3,6,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,6,8,1,1,1,2,1,1,6,8,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,1,11,3,3,3,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,1,11,3,11,3,10,3,3,3,3,11,3,3,12,3,10,3,3,3,3,6,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,11,3,3,12,3,10,12,3,3,10,12,3,3,11,3,3,3,6,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,11,3,3,3,3,3,6,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,6,3,6,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,11,3,3,3,3,3,3,6,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,11,3,3,3,11,3,3,3,3,3,11,3,3,6,1,1,1,
-1,1,1,2,1,1,2,1,1,2,1,1,1,2,1,1,6,3,3,8,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,
-1,1,1,6,3,3,10,3,3,10,3,3,3,5,1,1,1,1,1,6,3,3,10,3,3,3,3,3,3,10,3,3,10,3,3,3,3,3,3,10,3,3,3,3,3,10,3,3,5,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 function SteeringForce() {
 	this.x = 0;
@@ -230,28 +200,6 @@ function Hobo(x, y) {
 	this.radius = 25;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	
-	
-	///
-	
-	
-		/*this.fixDef = new b2FixtureDef;
-		this.fixDef.density = 5.0;
-		this.fixDef.friction = 1;
-		this.fixDef.restitution = 0;
-		this.bodyDef = new b2BodyDef;
-		this.bodyDef.type = b2Body.b2_dynamicBody;
-		this.bodyDef.position.x = this.x / SCALE;
-		this.bodyDef.position.y = this.y / SCALE;
-		this.bodyDef.linearDamping = 1.0;
-		this.fixDef.shape = new b2PolygonShape();
-		//this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
-		this.fixDef.shape.SetAsBox(this.width/SCALE,this.height/SCALE);
-		this.Body = world.CreateBody(this.bodyDef);
-		this.Body.CreateFixture(this.fixDef);*/
-	
-	
-	
 }
 
 var carOrientation = Player.orientation;
@@ -299,15 +247,12 @@ var enterable = false;
 
 Hobo.prototype.update = function(name) {
 	//console.log(Agents.length);
-	
-	
-	
 	for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
 		//console.log(enemy);
 		if (Agents.length > 0) {
-		if (utils.areColliding(Player.x, Player.y, Player.radius, Agents[enemy].x, Agents[enemy].y, Agents[enemy].radius)) {
-			//console.log('hit');
-		}
+			if (utils.areColliding(Player.x, Player.y, Player.radius, Agents[enemy].x, Agents[enemy].y, Agents[enemy].radius)) {
+				//console.log('hit');
+			}
 		}
 	}
 	var bodily = this.Body.GetContactList();
@@ -549,6 +494,11 @@ Hobo.prototype.update = function(name) {
 			vel.y = -7;
 		}
 	}
+	
+	if (cPoints == 2) {
+		mission = 3;
+	}
+	
 }
 punkSpeed = 0;
 //our hateable antagonists
@@ -586,7 +536,9 @@ function Punk(x, y, t) {
 	this.wanderAngle = 0;
 }
 var carnage = true;
+
 var stars = 0;
+
 Punk.prototype.draw = function(ox,oy) {
 	//console.log('test1');
 	context.save();
@@ -630,7 +582,7 @@ Punk.prototype.draw = function(ox,oy) {
 	context.save()
 	
 	//Arrow
-	if (carnage) {
+	if (mission == 1) {
 		if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
 			//console.log('test2');
 			context.fillStyle = "white";
@@ -881,26 +833,40 @@ function onKeyUp(e) {
 					state = 0;
 					inCar = false;
 					carOrientation = Player.orientation;
+					car1Sfx.stop();
 					carC.play();
 				}
 				//car1Sfx.stop();
-			}			
-			/*
-			if (inCar) {
-				state = 0;
-				//enterable = true;
-			}*/
-			/*if (state == 1) {
-				state = 0;
-				force.x = 0;
-				force.y = 0;
-				//car1Sfx.stop();
-				//step1.fadeOut(0, 300);
-			} else if (state == 0) {
-				state = 1;
-				//step1.stop();
-			}*/
+			}
+			if (checkPhone()) {
+				if (pType == 1) {
+					if (mission == 0) {
+						mission = 1;
+						hello.play();
+						
+						window.setTimeout(function() { carnageSfx.play(); }, 1000);
+						//phone2Sfx.play();
+					}
+				//console.log(pType);
+				} else if (pType == 2) {
+					if (mission == 0){
+						points = 0;
+						//checkRace = true;
+						mission = 2;
+						hello.play();
+						//phone2Sfx.play();
+						wpTargetX = waypoints[points].x;
+						wpTargetY = waypoints[points].y;
+					}
+				}
+			}
+			
 			break;
+		case 71:      //'G'
+			if (!mission == 0) {
+				mission = 0;
+			}
+          break;	
 		case 37:      //left
 			force.x = 0;
 			force.y = 0;
@@ -923,33 +889,24 @@ function onKeyUp(e) {
 			if (gameState == 0) {
 				gameState = 1;
 			}
-
+			if (mission == 3) {
+				mission = 0;
+				cPoints = 0;
+				laps = 0;
+			}
           break;
 		case 27:      //Esc
 			if (gameState == 1) {
-				gameState = 0;
-				car1Sfx.stop();
-				step1.stop();
+				gameState = 2;
+				Howler.mute();
+			} else  if (gameState == 2) {
+				gameState = 1;
+				Howler.unmute();
 			}
           break;
 		case 49:      //#1
-			if (gameState == 1) {
-				if (!checkRace){
-					points = 0;
-					checkRace = true;
-					
-					wpTargetX = waypoints[points].x;
-					wpTargetY = waypoints[points].y;
-				}
-			}
           break;
 		case 50:      //#2
-			if (gameState == 1) {
-				points = 0;
-				wpTargetX = waypoints[points].x;
-				wpTargetY = waypoints[points].y;
-				checkRace = false;
-			}
           break;		  
 		case 32:      //Space
 		//turnspeed = 1;
@@ -1232,13 +1189,14 @@ function drawCircle(x, y, radius) {
 	context.restore();
 }
 //AGENT
-function Agent(x,y) {
+function Agent(x,y,t) {
 	this.x = x;
 	this.y = y;
 	this.orientation = 0;
 	this.rotation = 0;
 	this.alpha = .5;
 	this.scale = 1;
+	this.type = t;
 	
 	//this.vx = 0;
 	//this.vy = 0;
@@ -1296,8 +1254,24 @@ function Agent(x,y) {
 			
 			context.drawImage(imageLoader.images["car2"],-16,-32);
 			//console.log(this.x);
-			context.restore();
-		
+			context.restore();	
+	}
+	
+	this.drawPhone = function() {
+			context.save();
+			//context.translate(this.x+canvas.width/2,this.y+canvas.height/2);
+			//context.translate(Math.floor(this.x), Math.floor(this.y));
+			//context.translate(canvas.width/2, canvas.height/2);
+			//context.translate(Math.floor(this.x-Player.x+canvas.width/2), Math.floor(this.y-Player.y+canvas.height/2));
+			
+			context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+			//context.rotate(carOrientation + (Math.PI/2));
+			
+				//context.rotate(Player.orientation + (Math.PI/2));
+			
+			context.drawImage(imageLoader.images["phone"],-16,-16);
+			//console.log(this.x);
+			context.restore();	
 	}
 }
 
@@ -1392,7 +1366,6 @@ function drawBullets() {
 		}
 	}
 }
-var cars = [];
 
 var enterCar = new Agent(Player.x+175,Player.y+100);
 cars.push(enterCar);
@@ -1409,6 +1382,83 @@ function drawCar() {
 	}
 }
 
+//Phone Booths
+var mission = 0;
+
+var phoneb1 = new Agent(Player.x+5000,Player.y+100, 1);
+phones.push(phoneb1);
+
+var phoneb2 = new Agent(Player.x+250,Player.y+100, 2);
+phones.push(phoneb2);
+
+var phoneCanPlay = 0;
+
+function updatePhone() {
+	if (mission == 0) {
+		for (var i = 0; i < phones.length; ++i) {
+			//PHONE SOUND
+			if (utils.getDistance(phones[0].x, phones[0].y, Player.x, Player.y) <= 700 || utils.getDistance(phones[1].x, phones[1].y, Player.x, Player.y) <= 700) {
+				phoneCanPlay += 1;
+				if (phoneCanPlay == 1) {
+					phoneSfx.play();
+					//phoneCanPlay = 0;
+				}
+			} else {
+				phoneCanPlay = 0;
+				phoneSfx.stop();
+			}
+		}
+	} else {
+		phoneCanPlay = 0;
+		phoneSfx.stop();
+	}
+}
+
+function drawPhone() {
+	for (var i = 0; i < phones.length; ++i) {
+		phones[i].drawPhone();
+		if (mission == 0) {
+			if(utils.getDistance(phones[i].x, phones[i].y, Player.x, Player.y) > 200){
+				context.fillStyle = "yellow";
+				context.translate(canvas.width/2, canvas.height/2);
+				context.beginPath();
+				context.rotate(-Math.atan2(phones[i].x - Player.x, phones[i].y - Player.y) + Math.PI);
+				context.translate(0, -200);
+				context.moveTo(0,0);
+				context.lineTo(7,7);
+				context.lineTo(-7,7);
+				context.closePath();
+				context.fill();
+				context.restore();
+			} else {
+				context.fillStyle = "yellow";
+				context.translate(phones[i].x-Player.x+canvas.width/2, phones[i].y-Player.y+canvas.height/2);
+				context.beginPath();
+				context.translate(0, -20);
+				context.moveTo(0,0);
+				context.lineTo(-7,-7);
+				context.lineTo(7,-7);
+				context.closePath();
+				context.fill();
+				context.restore();
+			}
+		}
+	}
+}
+
+var pType = 0;
+
+function checkPhone() {
+	if (mission == 0) {	
+		for (var i = 0; i < phones.length; ++i) {
+			if (utils.getDistance(phones[i].x, phones[i].y, Player.x, Player.y) <= 30) {
+				pType = phones[i].type;
+				return true;
+			}
+		}
+	}
+}
+
 //WAYPOINTS
 function wp(x, y){
 	this.x = x;
@@ -1417,6 +1467,8 @@ function wp(x, y){
 
 //Waypoints number
 var points = 0;
+var cPoints = 0;
+var laps = 0;
 
 //Waypoints Array			
 var waypoints = [new wp(4000,1400), 
@@ -1447,10 +1499,17 @@ function getNextWaypoint() {
 	points++;
 	if (points >= waypoints.length) {
 		points = 0;
+		laps++;
+		//cPoints++;
+	}
+	if (points == 1 && laps == 0) {
+			laps = 1;
+			cTime = Date.now();
 	}
 	wpTargetX = waypoints[points].x;
 	wpTargetY = waypoints[points].y;
 	checkP.play();
+	cPoints++;
 }
 
 var wpTargetX = waypoints[points].x;
@@ -1616,6 +1675,8 @@ var currentFrame = startFrame;
 var animationTimer = 0;
 var frameTimeSeconds = 1 / 7; // i.e., 15 frames per second
 var previousTime = Date.now();
+var pTime = Date.now();
+var cTime = Date.now();
 
 var mouseOrientation = 0;
  
@@ -1640,7 +1701,7 @@ function detectViewportChange(){
 cameraWidth = 192;
 cameraHeight = 192;
 
-function drawHud() {
+function drawHud(p,c,e) {
 	context.save();
 	context.fillStyle = "black";
 	context.fillRect(60,canvas.height-260,199,199);
@@ -1681,6 +1742,49 @@ function drawHud() {
 	context.stroke();
 	context.fill();
 	context.restore();
+	
+	//HUD STUFFS
+	context.save();
+	context.fillStyle = "white";
+	context.font = '30pt Calibri';
+	context.fillText("frame time: " + e, 16, 32);
+	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);	
+	context.fillText("Score: " + score, canvas.width/2, 32);	
+	context.restore();
+	
+	if (mission == 1) {
+	context.save();
+	console.log('Mission 1');
+	context.restore();	
+	} else if (mission == 2) {
+		
+		
+
+		// divide by 1000 to convert millseconds to seconds....
+		var eTime = (cTime - pTime); // / 1000;
+		
+		context.save();
+		//console.log('Mission 2');
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
+		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
+		context.fillText("Time: " + eTime, canvas.width/2, 64);
+		context.restore();
+		
+		pTime = cTime;
+		
+	} else if (mission == 3) {
+		context.save();
+		//console.log('Mission 2');
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
+		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
+		context.fillText("You Finished!", canvas.width/2, canvas.height/2);
+		context.restore();
+	}
+
 }
 
 function drawHeart(color){
@@ -1727,7 +1831,7 @@ function drawWP(ox,oy) {
 	context.restore();
 	context.save();
 	
-	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 1 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 10000){
+	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 250 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 10000){
 		//console.log('test2');
 		context.fillStyle = "red";
 		context.translate(canvas.width/2, canvas.height/2);
@@ -1762,11 +1866,12 @@ function initGame() {
 		if(gameState == 0) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(imageLoader.images["title"],0,0);
-			context.drawImage(imageLoader.images["title2"],0,0);
+			//context.drawImage(imageLoader.images["title2"],0,0);
 			context.fillStyle = "white";
 			context.font = '30pt Calibri';
-			context.fillText("Press the '1' and '2' keys to turn on/off the Checkpoint Race" , canvas.width/2-450, canvas.height/2 +275);
-			context.fillText("Press the 'E' key to enter and exit your vehicle" , canvas.width/2-350, canvas.height/2 +235);				
+			
+			//context.fillText("Press the 'E' key to enter and exit your vehicle" , canvas.width/2-350, canvas.height/2 +235);
+			//context.fillText("Press the 'E' key at the pay phones to start a mission" , canvas.width/2-450, canvas.height/2 +275);			
 		}
 		if(gameState == 1) {
 			//console.log(gameState);
@@ -1778,7 +1883,6 @@ function initGame() {
 	
 			// divide by 1000 to convert millseconds to seconds....
 			var elapsedTime = (currentTime - previousTime) / 1000;
-			
 			//spawner.initWorld();
 			
 			// limit elapsed time to one animation frame so that the
@@ -1863,30 +1967,31 @@ function initGame() {
 			}*/
 			
 			//console.log(Player.v);
-			
-			if (pSpeed > .5) {
+			if (pSpeed > 2) {
 				
 				if (state == 1) {
 					//console.log('Sound on!');
 					step1.stop();
 					if (!carSound) {
-						if (pSpeed < 1) {
-							car1Sfx.fadeIn(.1, 300);
+						if (pSpeed < 5) {
+							//car1Sfx.fadeIn(.1, 300);
+							car1Sfx.play();
 							car2Sfx.stop();
 							car3Sfx.stop();
 							car1Sfx.play();
 							//step1.fadeIn(.1, 300);
 							//step1.play();
 							carSound = true;
-						} /*else if (pSpeed >= 1 && pSpeed <= 15) {
-							car2Sfx.fadeIn(.1, 300);
+						} else if (pSpeed >= 5) {
+							//car2Sfx.fadeIn(.1, 300);
+							car3Sfx.play();
 							car1Sfx.stop();
 							car3Sfx.stop();
 							car2Sfx.play();
 							//step1.fadeIn(.1, 300);
 							//step1.play();
 							carSound = true;
-						} else if (pSpeed > 15 && pSpeed <= 30) {
+						} /*else if (pSpeed > 15 && pSpeed <= 30) {
 							car3Sfx.fadeIn(.1, 300);
 							car1Sfx.stop();
 							car2Sfx.stop();
@@ -1912,7 +2017,7 @@ function initGame() {
 			} else {
 				//console.log('Sound Off!');
 				if (chars.length <= 0) {
-					car1Sfx.fadeOut(0, 300);
+					//car1Sfx.fadeOut(0, 300);
 					//step1.fadeOut(0, 300);
 					//car1Sfx.stop();
 					//car2Sfx.stop();
@@ -1921,7 +2026,7 @@ function initGame() {
 					step1.stop();
 					//step1.fadeOut(0, 300);
 					//car1Sfx.stop();
-					carSound = false;
+					//carSound = false;
 					stepSound = false;
 				}
 			}
@@ -1940,9 +2045,11 @@ function initGame() {
 			updateBullets();
 			drawBullets();
 			updateCar();
+			drawPhone();
+			updatePhone();
 			//console.log(points);
 			//console.log(points);
-			if (checkRace) {
+			if (mission == 2) {
 				if (wpTargetX != -1) {
 					drawWP(Player.x, Player.y);
 					//context.strokeStyle = "red";
@@ -1958,33 +2065,26 @@ function initGame() {
 			//console.log(thrust);
 			//console.log(vx);
 			//console.log(state);
-			context.fillStyle = "white";
+			
+			/*context.fillStyle = "white";
 			context.font = '30pt Calibri';
 			context.fillText("frame time: " + elapsedTime, 16, 32);
 			context.fillText("frame rate: " + Math.round((1.0 / elapsedTime)), 16, 64);	
 			context.fillText("Agents Length: " + Agents.length, 16, 98);	
 			context.fillText("Punks: " + Agents.length, 16, 128);
-			context.fillText("Score: " + score, canvas.width/2, 32);				
+			context.fillText("Score: " + score, canvas.width/2, 32);	*/			
+			
+			
 			//console.log(Agents.length);
 			//requestAnimationFrame(tick);
-			drawHud();
+			drawHud(previousTime, currentTime, elapsedTime);
 			drawHud2();
 		}
 		if(gameState == 2) {
 			context.save();
-			context.fillStyle = "black";
-			context.globalAlpha = 0.5;
-			context.fillRect(0, 0, canvas.width, canvas.height)
-			context.fillStyle = "red";
-			context.globalAlpha = 1;
-			context.font = "75px Verdana";
-			context.fillText("GAME OVER",canvas.width/2 - 220, 200);
-			context.font = "25px Verdana";
-			var dollars = Math.floor(Player.moneyCollected/100)
-			var cents = Math.round((Player.moneyCollected/100 - dollars) * 100)
-			context.fillText("You picked up $" + dollars + "." + cents, canvas.width/2 - 140, 240);
-			context.fillText("You smoked " + Player.crackSmoked + " crack hits",  canvas.width/2 - 140, 280)
-			context.fillText("Press F5 to restart game", canvas.width/2 - 140, 320);
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(imageLoader.images["title2"],0,0);
+			context.restore();
 		}		
 		if(gameState == 3) {
 			context.save();
