@@ -495,7 +495,7 @@ Hobo.prototype.update = function(name) {
 		}
 	}
 	
-	if (cPoints == 67) {
+	if (cPoints == 2) {
 		mission = 3;
 	}
 	
@@ -1505,17 +1505,30 @@ function getNextWaypoint() {
 	}
 	if (points == 1 && laps == 0) {
 			laps = 1;
-			//cTime = Date.now();
 			startTime = new Date();
 	}
 	wpTargetX = waypoints[points].x;
 	wpTargetY = waypoints[points].y;
+	
+	if (points == waypoints.length-1) {
+		wpTargetX2 = waypoints[0].x;
+		wpTargetY2 = waypoints[0].y;		
+	} else {
+		wpTargetX2 = waypoints[points+1].x;
+		wpTargetY2 = waypoints[points+1].y;
+	}
 	checkP.play();
 	cPoints++;
+	ScoreSecOld = scoreSec;
+	ScoreMinOld = scoreMin;
+	//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
 }
 
 var wpTargetX = waypoints[points].x;
 var wpTargetY = waypoints[points].y;
+
+var wpTargetX2 = waypoints[(points+1)].x;
+var wpTargetY2 = waypoints[(points+1)].y;
 
 //BULLETS
 var bullets = [];
@@ -1677,8 +1690,11 @@ var currentFrame = startFrame;
 var animationTimer = 0;
 var frameTimeSeconds = 1 / 7; // i.e., 15 frames per second
 var previousTime = Date.now();
-var pTime = Date.now();
-var cTime = Date.now();
+var scoreSec = 0;
+var scoreMin = 0;
+var scoreSecOld = 0;
+var scoreMinOld = 0;
+
 
 var mouseOrientation = 0;
  
@@ -1759,7 +1775,7 @@ function drawHud(p,c,e) {
 	console.log('Mission 1');
 	context.restore();	
 	} else if (mission == 2) {
-		  
+		  // Timer code from http://jsfiddle.net/cckSj/5/
 		  // later record end time
 			var endTime = new Date();
 
@@ -1786,12 +1802,12 @@ function drawHud(p,c,e) {
 
 			// remove hours from the date
 			timeDiff = Math.floor(timeDiff / 24);
-
-
 		
-
-		// divide by 1000 to convert millseconds to seconds....
-		var eTime = (cTime - pTime); // / 1000;
+		var secondsZero = seconds;
+		
+		if(seconds <10) {
+			secondsZero = '0' + seconds;
+		}
 		
 		context.save();
 		//console.log('Mission 2');
@@ -1800,23 +1816,34 @@ function drawHud(p,c,e) {
 		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
 		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
 		if ( laps == 0) { 
-			context.fillText("Time: " + 0 + ':' + 0, canvas.width/2, 64);
+			context.fillText("Time: " + '0:00', canvas.width/2, 64);
 		} else {
-			context.fillText("Time: " + minutes + ':' + seconds, canvas.width/2, 64);
+			context.fillText("Time: " + minutes + ':' + secondsZero, canvas.width/2, 64);
+			scoreSec = seconds;
+			scoreMin = minutes;
 		}
+		
+		
+		
+		
 		context.restore();
-		
-		pTime = cTime;
-		
 	} else if (mission == 3) {
+		var secondZero = scoreSec;
+		
+		if(scoreSec<10) {
+			secondZero = '0'+scoreSec;
+		}
 		context.save();
 		//console.log('Mission 2');
 		context.fillStyle = "white";
 		context.font = '20pt Calibri';
 		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
 		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
-		context.fillText("You Finished!", canvas.width/2, canvas.height/2);
+		context.fillText("You Finished!", canvas.width/2-75, canvas.height/2-128);
+		context.fillText("Your time was " + scoreMin + ":" + secondZero, canvas.width/2-100, canvas.height/2-64);
+		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+128);
 		context.restore();
+		//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
 	}
 
 }
@@ -1865,8 +1892,9 @@ function drawWP(ox,oy) {
 	context.restore();
 	context.save();
 	
-	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 250 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 10000){
+	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 250 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 15000){
 		//console.log('test2');
+		context.save();
 		context.fillStyle = "red";
 		context.translate(canvas.width/2, canvas.height/2);
 		context.beginPath();
@@ -1878,7 +1906,24 @@ function drawWP(ox,oy) {
 		context.closePath();
 		context.fill();
 		context.restore();
+		//Second Arrow
 	}
+	if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 1 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 600) {
+		context.save();
+		context.fillStyle = "pink";
+		context.translate(canvas.width/2, canvas.height/2);
+		context.beginPath();
+		context.rotate(-Math.atan2(wpTargetX2 - Player.x, wpTargetY2 - Player.y) + Math.PI);
+		context.translate(0, -200);
+		context.moveTo(0,0);
+		context.lineTo(7,7);
+		context.lineTo(-7,7);
+		context.closePath();
+		context.fill();
+		context.restore();
+	}
+	
+	
 	context.restore();
 }
 
@@ -2096,8 +2141,8 @@ function initGame() {
 			}
 			//console.log(wpTargetX);
 			
-			//console.log(thrust);
-			//console.log(vx);
+			//console.log('Score Sec: '+scoreSec);
+			//console.log('Score Sec Old: '+scoreSecOld);
 			//console.log(state);
 			
 			/*context.fillStyle = "white";
