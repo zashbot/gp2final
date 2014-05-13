@@ -495,7 +495,7 @@ Hobo.prototype.update = function(name) {
 		}
 	}
 	
-	if (cPoints == 2) {
+	if (cPoints == 67) {
 		mission = 3;
 	}
 	
@@ -1469,7 +1469,7 @@ function wp(x, y){
 var points = 0;
 var cPoints = 0;
 var laps = 0;
-
+var startTime;
 //Waypoints Array			
 var waypoints = [new wp(4000,1400), 
 				new wp(6500,1400), 
@@ -1504,7 +1504,8 @@ function getNextWaypoint() {
 	}
 	if (points == 1 && laps == 0) {
 			laps = 1;
-			cTime = Date.now();
+			//cTime = Date.now();
+			startTime = new Date();
 	}
 	wpTargetX = waypoints[points].x;
 	wpTargetY = waypoints[points].y;
@@ -1757,7 +1758,35 @@ function drawHud(p,c,e) {
 	console.log('Mission 1');
 	context.restore();	
 	} else if (mission == 2) {
-		
+		  
+		  // later record end time
+			var endTime = new Date();
+
+			// time difference in ms
+			var timeDiff = endTime - startTime;
+
+			// strip the miliseconds
+			timeDiff /= 1000;
+
+			// get seconds
+			var seconds = Math.round(timeDiff % 60);
+
+			// remove seconds from the date
+			timeDiff = Math.floor(timeDiff / 60);
+
+			// get minutes
+			var minutes = Math.round(timeDiff % 60);
+
+			// remove minutes from the date
+			timeDiff = Math.floor(timeDiff / 60);
+
+			// get hours
+			var hours = Math.round(timeDiff % 24);
+
+			// remove hours from the date
+			timeDiff = Math.floor(timeDiff / 24);
+
+
 		
 
 		// divide by 1000 to convert millseconds to seconds....
@@ -1769,7 +1798,11 @@ function drawHud(p,c,e) {
 		context.font = '20pt Calibri';
 		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
 		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
-		context.fillText("Time: " + eTime, canvas.width/2, 64);
+		if ( laps == 0) { 
+			context.fillText("Time: " + 0 + ':' + 0, canvas.width/2, 64);
+		} else {
+			context.fillText("Time: " + minutes + ':' + seconds, canvas.width/2, 64);
+		}
 		context.restore();
 		
 		pTime = cTime;
