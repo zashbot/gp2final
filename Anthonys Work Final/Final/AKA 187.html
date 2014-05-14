@@ -165,7 +165,7 @@ var steeringForce = new SteeringForce();
 //*	    ACTORS     *
 //******************
 
-//the Hobo, our loveable little playable character who must collect change to live.
+
 function Hobo(x, y) {
 	this.x = x;
 	this.y = y;
@@ -259,41 +259,19 @@ Hobo.prototype.update = function(name) {
 	if(bodily) {
 		do {
 			if(bodily.other.GetUserData(Punk)){ //if we are enemy it returns 1
-				//this.Body.SetUserData(this)
-				//console.log('Punk hit');
 				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
 					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
-						//console.log(bodily.contact.IsTouching(Punk));
-						//console.log('hit');
-						//this.Body.SetUserData(this)
-						//console.log(bodily.other.GetUserData());
-						//crushed = bodily.other.GetUserData(this);
-						//Agents[enemy].x = -10000;
 						if (state == 1) {
 							if (canPlaySplat) {
 								crushed = bodily.other.GetUserData();
-								//Punk.x = -9001;
-								//Punk.y = -9001;
-								//var coin = this.coins.shift();
-								//total += coin.GetUserData();
 								world.DestroyBody(crushed.Body);
 								Agents.splice(Agents.indexOf(crushed),1);
-								//this.y = -10000;
-								//console.log(this.Body.GetContactList());
 								crush.play();
 								canPlaySplat = false;
 								window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
 								score += 1;
 							}
 						}
-					//Agents.Splice(enemy,1);
-					i = bodily.other.GetUserData(this);
-					//gameState = 3;
-					//console.log('Hit!');
-					//destroyFixture();		
-					//i = bodily.other.GetUserData();
-					//Agents.splice(i,1);
-					//i.x = -100000;
 					}
 				}
 			} else {
@@ -386,13 +364,6 @@ Hobo.prototype.update = function(name) {
 		//enforce max velocity
 		var vel = this.Body.GetLinearVelocity();
 		this.orientation = Math.atan2(vel.y,vel.x);
-		//console.log(vel.y);
-		//var speed = vel.Normalize();
-		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
-		//console.log(speed);
-		//console.log(vel.x);
-		//console.log(vel.y);
-		//update where our hobo is on screen
 		var thevec = this.Body.GetPosition();
 		this.x = thevec.x * SCALE;
 		this.y = thevec.y * SCALE;
@@ -672,9 +643,51 @@ Punk.prototype.removeCoins = function(amount){
 function Gun(x, y) {
 	this.x = x;
 	this.y = y;
+	this.damage = 5;
 	this.orientation = 0;
-	this.maxAcceleration = .2;
-	var lastseenx = 0, lastseeny = 0, lastsight = 0;
+	this.held = 0;
+	this.active = 1;
+}
+
+Gun.prototype.draw = function(ox,oy) {
+	if(held){
+		//held sprite
+		
+	}
+	else {
+		context.save();
+		context.translate(this.x, this.y);
+		context.fillStyle = "grey";
+		context.beginPath();
+		context.closePath();
+		//dropped sprite
+	}
+}
+
+Gun.prototype.update = function(SteeringForce) {
+	
+	if(this.held){
+		this.x=Player.x;
+		this.y=Player.y;
+	}
+	if(this.active) {
+		if (Player.isFiring && Player.canFire) {
+			var x = 10*cos(Player.orientation(t) + Player.x;
+			var y = 10*sin(Player.orientation(t) + Player.y;
+			Guns.push(new Bullet(x,y,this.damage));
+			shootSfx.play();
+			Player.canFire = false;
+			//attachBulletPfx(bullet);
+			window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
+		}
+	}
+}
+
+function Bullet(x,y,d) {
+	
+	this.x = x;
+	this.y = y;
+	this.damage = d;
 	//begin initialization of BOX2D object
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 4;
@@ -684,76 +697,14 @@ function Gun(x, y) {
 	this.bodyDef.type = b2Body.b2_dynamicBody;
 	this.bodyDef.position.x = this.x / SCALE;
 	this.bodyDef.position.y = this.y / SCALE;
-	this.bodyDef.linearDamping = 0.5;
-	this.bodyDef.userData = 1;
+	this.bodyDef.bullet = true;
 	this.fixDef.shape = new b2CircleShape(0.1);
+	this.radius = .1;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	this.Body.SetUserData(this)
+	this.Body.SetUserData(this);
 }
-
-Gun.prototype.draw = function(ox,oy) {
-	context.save();
-	context.strokeStyle = "black";
-	//context.strokeText(this.x + " " + this.y,canvas.height,0);
-	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
-	context.rotate(this.orientation - (Math.PI/2));
-	context.beginPath();
-	context.fillStyle = "magenta"
-	context.arc(0,0, 15, 0, 2 * Math.PI);
-	context.fill();
-	context.closePath();
-	context.beginPath();
-	context.fillStyle = "black";
-	context.moveTo(1,0);
-	context.lineTo(1,16);
-	context.lineTo(-1,16);
-	context.lineTo(-1,0);
-	context.closePath();
-	context.fill();
-	context.restore();
-	context.save()
-	if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
-		context.fillStyle = "magenta";
-		context.translate(canvas.width/2, canvas.height/2);
-		context.beginPath();
-		context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
-		context.translate(0, -200);
-		context.moveTo(0,0);
-		context.lineTo(7,7);
-		context.lineTo(-7,7);
-		context.closePath();
-		context.fill();
-		context.restore();
-	}
-}
-
-Gun.prototype.update = function(SteeringForce) {
-	var force = new b2Vec2
-	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
-		force = flee(this, Player.x, Player.y);
-	}
-	//lostsight += 1*REFMULTI
-	force.x = force.x*REFMULTI;
-	force.y = force.y*REFMULTI;
-	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
-	var vel = this.Body.GetLinearVelocity();
-	this.orientation = Math.atan2(vel.y,vel.x);
-	var thevec = this.Body.GetPosition();
-	this.x = thevec.x * SCALE;
-	this.y = thevec.y * SCALE;
 	
-	console.log('Gun here!');
-
-	if (Player.isFiring && Player.canFire) {
-		Guns.push(new Gun(Player.x - Player.orientation, Player.y - Player.orientation));
-		shootSfx.play();
-		Player.canFire = false;
-		//attachBulletPfx(bullet);
-		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
-	}
-}
-
 function spawnController() {
 	this.initWorld = function() {
 		/*for(i = 0; i < 5; i++){ //make punks
@@ -779,6 +730,8 @@ function spawnController() {
 			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2));
 		}
 	}
+	this.updateSpawns = function() {
+		if
 }
 
 carSound = false;
@@ -1275,7 +1228,7 @@ function Agent(x,y,t) {
 	}
 }
 
-//BULLET FUNCTION
+/*/BULLET FUNCTION
 function updateBullets() {
 	
 	var dx = mouse.x - canvas.width/2;//Player.x;
@@ -1329,7 +1282,7 @@ function updateBullets() {
 				bullets.splice(i,1);
 				bullRots.splice(i,1);
 				//wallSfx.play();
-			}	*/	
+			}	
 		}
 	}
 }
@@ -1361,12 +1314,12 @@ function drawBullets() {
 			
 			//context.fill();
 			context.stroke();
-			context.restore();*/
+			context.restore();
 			//console.log(Player.orientation);
 		}
 	}
 }
-
+*/
 var enterCar = new Agent(Player.x+175,Player.y+100);
 cars.push(enterCar);
 
