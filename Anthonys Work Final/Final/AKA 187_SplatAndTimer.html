@@ -243,7 +243,7 @@ var canPlayCrash = true;
 var crashDelayMS = 500;
 var canPlaySplat = true;
 var splatDelayMS = 200;
-var score = 0;
+
 var enterable = false;
 
 Hobo.prototype.update = function(name) {
@@ -496,7 +496,7 @@ Hobo.prototype.update = function(name) {
 		}
 	}
 	
-	if (cPoints == 2) {
+	if (cPoints == 67) {
 		mission = 3;
 	}
 	
@@ -835,6 +835,7 @@ function onKeyUp(e) {
 			if (checkPhone()) {
 				if (pType == 1) {
 					if (mission == 0) {
+						startTime = new Date();
 						mission = 1;
 						hello.play();
 						
@@ -846,6 +847,7 @@ function onKeyUp(e) {
 					if (mission == 0){
 						points = 0;
 						//checkRace = true;
+						startTime = new Date();
 						mission = 2;
 						hello.play();
 						//phone2Sfx.play();
@@ -883,10 +885,11 @@ function onKeyUp(e) {
 			if (gameState == 0) {
 				gameState = 1;
 			}
-			if (mission == 3) {
+			if (mission == 3 || mission == 4) {
 				mission = 0;
 				cPoints = 0;
 				laps = 0;
+				score = 0;
 			}
           break;
 		case 27:      //Esc
@@ -1413,6 +1416,8 @@ var points = 0;
 var cPoints = 0;
 var laps = 0;
 var startTime;
+var timerEnd = 60;
+var startTimer;
 //Waypoints Array			
 var waypoints = [new wp(4000,1400), 
 				new wp(6500,1400), 
@@ -1636,6 +1641,8 @@ var scoreSec = 0;
 var scoreMin = 0;
 var scoreSecOld = 0;
 var scoreMinOld = 0;
+var score = 0;
+var scoreOld = 0;
 
 
 var mouseOrientation = 0;
@@ -1660,6 +1667,7 @@ function detectViewportChange(){
 
 cameraWidth = 192;
 cameraHeight = 192;
+var hudDisplay = false;
 
 function drawHud(p,c,e) {
 	context.save();
@@ -1709,47 +1717,53 @@ function drawHud(p,c,e) {
 	context.font = '30pt Calibri';
 	context.fillText("frame time: " + e, 16, 32);
 	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);	
-	context.fillText("Score: " + score, canvas.width/2, 32);	
+	
 	context.restore();
 	
-	if (mission == 1) {
-	context.save();
-	console.log('Mission 1');
-	context.restore();	
-	} else if (mission == 2) {
-		  // Timer code from http://jsfiddle.net/cckSj/5/
-		  // later record end time
-			var endTime = new Date();
-
-			// time difference in ms
-			var timeDiff = endTime - startTime;
-
-			// strip the miliseconds
-			timeDiff /= 1000;
-
-			// get seconds
-			var seconds = Math.round(timeDiff % 60);
-
-			// remove seconds from the date
-			timeDiff = Math.floor(timeDiff / 60);
-
-			// get minutes
-			var minutes = Math.round(timeDiff % 60);
-
-			// remove minutes from the date
-			timeDiff = Math.floor(timeDiff / 60);
-
-			// get hours
-			var hours = Math.round(timeDiff % 24);
-
-			// remove hours from the date
-			timeDiff = Math.floor(timeDiff / 24);
-		
-		var secondsZero = seconds;
-		
-		if(seconds <10) {
-			secondsZero = '0' + seconds;
+	
+	// Timer code from http://jsfiddle.net/cckSj/5/
+	// later record end time
+	var endTime = new Date();
+	// time difference in ms
+	var timeDiff = endTime - startTime;
+	// strip the miliseconds
+	timeDiff /= 1000;
+	// get seconds
+	var seconds = Math.floor(timeDiff % 60);
+	// remove seconds from the date
+	timeDiff = Math.floor(timeDiff / 60);
+	// get minutes
+	var minutes = Math.floor(timeDiff % 60);
+	// remove minutes from the date
+	timeDiff = Math.floor(timeDiff / 60);
+	// get hours
+	var hours = Math.floor(timeDiff % 24);
+	// remove hours from the date
+	timeDiff = Math.floor(timeDiff / 24);
+	//Add 0 to seconds
+	var secondsZero = seconds;
+	if(seconds <10) {
+		secondsZero = '0' + seconds;
+	}
+	
+	var tick = timerEnd - seconds;
+	
+	if (mission == 0) {
+		score = 0;
+	} else if (mission == 1) { // Carnage
+		context.save();
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Score: " + score, canvas.width/2, 32);	
+		context.fillText("Time: " + tick, canvas.width/2, 64);
+		context.fillText("Carnage! Run over as many people as possible!", canvas.width/2-200, canvas.height/2 + 300);
+		context.restore();	
+		scoreOld = score;
+		if (tick <= 0) {
+			mission = 4;
+			tick = 60;
 		}
+	} else if (mission == 2) { //Checkpoint Race
 		
 		context.save();
 		//console.log('Mission 2');
@@ -1764,12 +1778,8 @@ function drawHud(p,c,e) {
 			scoreSec = seconds;
 			scoreMin = minutes;
 		}
-		
-		
-		
-		
 		context.restore();
-	} else if (mission == 3) {
+	} else if (mission == 3) { //Checkpoint Finish
 		var secondZero = scoreSec;
 		
 		if(scoreSec<10) {
@@ -1786,6 +1796,17 @@ function drawHud(p,c,e) {
 		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+128);
 		context.restore();
 		//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
+	} else if (mission == 4) { //Carnage Finish
+		context.save();
+		//console.log('Mission 2');
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		//context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
+		//context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
+		context.fillText("You ran over " + scoreOld + " people!", canvas.width/2-75, canvas.height/2-128);
+		//context.fillText("Your time was " + scoreMin + ":" + secondZero, canvas.width/2-100, canvas.height/2-64);
+		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+128);
+		context.restore();
 	}
 
 }
@@ -2069,9 +2090,6 @@ function initGame() {
 			updateBullets();
 			drawBullets();
 			
-			
-			
-
 			//console.log(points);
 			//console.log(points);
 			if (mission == 2) {
@@ -2085,24 +2103,7 @@ function initGame() {
 					}
 				}
 			}
-			//console.log(wpTargetX);
-			
-			//console.log('Score Sec: '+scoreSec);
-			//console.log('Score Sec Old: '+scoreSecOld);
-			//console.log(state);
-			
-			/*context.fillStyle = "white";
-			context.font = '30pt Calibri';
-			context.fillText("frame time: " + elapsedTime, 16, 32);
-			context.fillText("frame rate: " + Math.round((1.0 / elapsedTime)), 16, 64);	
-			context.fillText("Agents Length: " + Agents.length, 16, 98);	
-			context.fillText("Punks: " + Agents.length, 16, 128);
-			context.fillText("Score: " + score, canvas.width/2, 32);	*/			
-			
-			
-			//console.log(Agents.length);
-			//requestAnimationFrame(tick);
-			drawHud(previousTime, currentTime, elapsedTime);
+			drawHud(previousTime,currentTime,elapsedTime);
 			drawHud2();
 		}
 		if(gameState == 2) {
