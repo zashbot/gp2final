@@ -108,7 +108,7 @@ var turnspeed = 1;
 //var Car = new Hobo(1000,1664);
 
 var Agents = [];
-var Guns = [];
+var Guns = new Gun();
 var Pickups = [];
 var Buildings = [];
 var Roads = [];
@@ -153,6 +153,7 @@ var rows = 34;
 var tileSize = 256;
 
 var map = [27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 33, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 4, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 5, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 20, 36, 19, 20, 11, 19, 23, 20, 11, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 36, 22, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 36, 36, 36, 36, 36, 8, 10, 10, 10, 6, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 8, 10, 10, 10, 10, 6, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 19, 20, 36, 19, 20, 11, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 15, 16, 16, 13, 11, 22, 25, 25, 21, 8, 9, 10, 10, 10, 1, 10, 10, 10, 10, 6, 22, 21, 36, 22, 21, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 7, 10, 9, 10, 10, 7, 6, 15, 16, 13, 11, 19, 23, 23, 20, 8, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 3, 5, 15, 13, 11, 22, 18, 18, 24, 11, 19, 23, 23, 23, 20, 11, 12, 12, 12, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 25, 25, 18, 24, 11, 26, 18, 24, 12, 11, 12, 12, 11, 36, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 14, 14, 14, 8, 10, 10, 10, 9, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 18, 18, 24, 11, 22, 21, 36, 36, 22, 21, 11, 26, 18, 24, 17, 11, 17, 17, 11, 36, 22, 25, 24, 8, 10, 10, 10, 10, 10, 1, 10, 10, 9, 2, 36, 19, 20, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 26, 18, 24, 8, 10, 10, 10, 10, 10, 10, 6, 22, 25, 21, 14, 11, 14, 14, 11, 36, 36, 36, 14, 11, 19, 23, 23, 23, 20, 11, 12, 12, 11, 36, 19, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 22, 25, 21, 11, 19, 23, 23, 23, 23, 20, 8, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 14, 14, 11, 19, 18, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 6, 26, 18, 18, 18, 18, 24, 11, 19, 23, 23, 20, 11, 27, 27, 11, 19, 23, 23, 20, 8, 10, 10, 10, 9, 10, 7, 10, 10, 6, 22, 25, 25, 21, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 15, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 25, 21, 11, 27, 27, 11, 22, 25, 25, 21, 11, 19, 23, 20, 11, 19, 23, 23, 20, 8, 10, 10, 9, 10, 1, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 9, 10, 7, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 26, 18, 18, 24, 11, 19, 20, 11, 12, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 15, 16, 16, 16, 16, 13, 11, 15, 13, 11, 15, 16, 16, 13, 11, 26, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 11, 14, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 19, 23, 20, 4, 10, 10, 7, 10, 10, 7, 5, 19, 23, 20, 11, 22, 25, 21, 11, 22, 25, 25, 21, 8, 10, 10, 1, 10, 6, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 23, 20, 11, 26, 18, 24, 8, 10, 10, 10, 7, 10, 9, 10, 10, 6, 19, 20, 11, 12, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 20, 11, 19, 20, 11, 22, 21, 11, 14, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 26, 18, 18, 18, 24, 11, 26, 24, 8, 10, 10, 7, 10, 7, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 22, 21, 11, 19, 23, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 8, 10, 10, 10, 6, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 8, 10, 10, 10, 10, 10, 7, 10, 10, 6, 15, 16, 16, 16, 16, 13, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 15, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 15, 16, 16, 16, 16, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 3, 10, 10, 10, 10, 7, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 2, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 35, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27];
+
 
 function SteeringForce() {
 	this.x = 0;
@@ -200,6 +201,8 @@ function Hobo(x, y) {
 	this.radius = 25;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
+	var array = [4, this];
+	this.Body.SetUserData(array);
 }
 
 var carOrientation = Player.orientation;
@@ -246,24 +249,16 @@ var score = 0;
 var enterable = false;
 
 Hobo.prototype.update = function(name) {
-	//console.log(Agents.length);
-	for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
-		//console.log(enemy);
-		if (Agents.length > 0) {
-			if (utils.areColliding(Player.x, Player.y, Player.radius, Agents[enemy].x, Agents[enemy].y, Agents[enemy].radius)) {
-				//console.log('hit');
-			}
-		}
-	}
+	
 	var bodily = this.Body.GetContactList();
 	if(bodily) {
 		do {
-			if(bodily.other.GetUserData(Punk)){ //if we are enemy it returns 1
+			if(bodily.other.GetUserData()[0] == 2){ //if we are an enemy
 				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
 					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
 						if (state == 1) {
 							if (canPlaySplat) {
-								crushed = bodily.other.GetUserData();
+								crushed = bodily.other.GetUserData()[1];
 								world.DestroyBody(crushed.Body);
 								Agents.splice(Agents.indexOf(crushed),1);
 								crush.play();
@@ -274,9 +269,8 @@ Hobo.prototype.update = function(name) {
 						}
 					}
 				}
-			} else {
-				if(!bodily.next){
-				//console.log('Wall hit');
+			} 
+			else if(bodily.other.GetUserData()[0] == 1){ //if we are a wall
 				if (pSpeed >=10) {
 					if (canPlayCrash) {
 						//console.log(pSpeed);
@@ -286,20 +280,10 @@ Hobo.prototype.update = function(name) {
 						
 					}
 				}
-				}
 			}
-			if(!bodily.next){
-				if (pSpeed >=10) {
-					if (canPlayCrash) {
-						//console.log(pSpeed);
-						//crash.play();
-						canPlayCrash = false;
-						window.setTimeout(function() { canPlayCrash = true; }, crashDelayMS);
-						
-					}
-				}
-				break;
-			} else{bodily = bodily.next}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
 		}while(1)
 	}
 	/*
@@ -495,7 +479,8 @@ function Punk(x, y, t) {
 	this.radius = .5;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	this.Body.SetUserData(this)
+	var array = [2, this]
+	this.Body.SetUserData(array)
 	
 		// arrive radius for beginning to slow down
 	this.slowRadius = 64;
@@ -647,10 +632,11 @@ function Gun(x, y) {
 	this.orientation = 0;
 	this.held = 0;
 	this.active = 1;
+	this.bullets = []
 }
 
 Gun.prototype.draw = function(ox,oy) {
-	if(held){
+	if(this.held && this.active){
 		//held sprite
 		
 	}
@@ -672,14 +658,22 @@ Gun.prototype.update = function(SteeringForce) {
 	}
 	if(this.active) {
 		if (Player.isFiring && Player.canFire) {
-			var x = 10*cos(Player.orientation(t) + Player.x;
-			var y = 10*sin(Player.orientation(t) + Player.y;
-			Guns.push(new Bullet(x,y,this.damage));
+			var dx = mouse.x - canvas.width/2;
+			var dy = mouse.y - canvas.height/2;
+			var theta =  Math.atan2(dy,dx);
+			var result = new b2Vec2;
+			result.x = 20*Math.cos(theta);
+			result.y = 20*Math.sin(theta);
+			this.bullets.unshift(new Bullet(Player.x+10*Math.cos(theta),Player.y+10*Math.sin(theta),this.damage));
+			this.bullets[0].Body.ApplyImpulse(result, this.bullets[0].Body.GetWorldCenter());
 			shootSfx.play();
 			Player.canFire = false;
 			//attachBulletPfx(bullet);
 			window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
 		}
+	}
+	for(i = 0; i < this.bullets.length; i++) {
+		this.bullets[i].update(this);
 	}
 }
 
@@ -687,7 +681,10 @@ function Bullet(x,y,d) {
 	
 	this.x = x;
 	this.y = y;
+	this.orientation = 0;
 	this.damage = d;
+	this.type = 2;
+	this.trail = [];
 	//begin initialization of BOX2D object
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 4;
@@ -702,7 +699,59 @@ function Bullet(x,y,d) {
 	this.radius = .1;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	this.Body.SetUserData(this);
+	var array = [0, this];
+	this.Body.SetUserData(array);
+}
+function tp(x,y,o) {
+	this.x=x;
+	this.y=y;
+	this.o=o;
+}
+
+Bullet.prototype.update = function(gun) {
+	//update
+	
+		
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()[0] === 2){ //if we are an enemy
+				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
+					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+						//damage the enemy		
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);						
+					}
+				}
+			} 
+			else if(bodily.other.GetUserData()[0] === 1){ //if we are a wall
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);
+						//play impact effects
+			}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
+		}while(1)
+	}
+	
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+	
+	//draw
+	
+	context.save();
+	context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+	context.beginPath();
+	context.fillStyle = "white";
+	context.arc(0,0,3,0,2*Math.PI);
+	context.fill();
+	context.closePath();
+	context.restore();
+		
 }
 	
 function spawnController() {
@@ -731,8 +780,11 @@ function spawnController() {
 		}
 	}
 	this.updateSpawns = function() {
-		if
+		if(stars > 0){
+		}
+	}	
 }
+
 
 carSound = false;
 stepSound = false;
@@ -937,6 +989,8 @@ function mapObject(x, y, h, w, t) {
 		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
 		this.Body = world.CreateBody(this.bodyDef);
 		this.Body.CreateFixture(this.fixDef);
+		var array = [1,this];
+		this.Body.SetUserData(array);
 		}
 	}
 	
@@ -1718,7 +1772,8 @@ function drawHud(p,c,e) {
 	context.fillStyle = "white";
 	context.font = '30pt Calibri';
 	context.fillText("frame time: " + e, 16, 32);
-	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);	
+	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);
+	context.fillText("bullets: " + Guns.bullets.length, 16, 96);
 	context.fillText("Score: " + score, canvas.width/2, 32);	
 	context.restore();
 	
@@ -1940,7 +1995,7 @@ function initGame() {
 			previousTime = currentTime;
 			//ANIMATION TIMING
 			
-			
+			Player.update();
 			
 			for(var i = 0; i < Buildings.length; ++i) {
 				//Buildings[i].update();
@@ -1963,11 +2018,8 @@ function initGame() {
 				agent.update();
 				agent.draw(Player.x, Player.y);
 			}
-			/*for(var i = 0; i < Guns.length; ++i) {
-				var agent = Guns[i];
-				agent.update();
-				agent.draw(Player.x, Player.y);
-			}*/
+			Guns.update();
+			Guns.draw();
 			
 			//Car.update();
 			//Car.draw();
@@ -1975,7 +2027,7 @@ function initGame() {
 			
 			context.save();
 			drawCar();
-			Player.update();
+			
 			Player.draw();
 			
 			/*if (chars.length == 0) {
@@ -2073,8 +2125,8 @@ function initGame() {
 			
 			//spawner.update();
 			
-			updateBullets();
-			drawBullets();
+			
+			
 			updateCar();
 			drawPhone();
 			updatePhone();
