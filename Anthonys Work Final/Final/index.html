@@ -43,6 +43,7 @@ imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
 imageLoader.queueImage("splat");
 imageLoader.queueImage("phone");
+imageLoader.queueImage("arrow");
 imageLoader.queueImage("map_full");
 imageLoader.queueImage("map_full2");
 imageLoader.queueImage("map_full3");
@@ -108,7 +109,7 @@ var turnspeed = 1;
 //var Car = new Hobo(1000,1664);
 
 var Agents = [];
-var Guns = [];
+var Guns = new Gun();
 var Pickups = [];
 var Buildings = [];
 var Roads = [];
@@ -134,14 +135,7 @@ window.addEventListener("keyup", function(e) {
 	var index = chars.indexOf(e.keyCode);
 	chars.splice(index, 1);
 }, false);
-/*window.addEventListener("keyup", onKeyUp, false);
-window.addEventListener("keydown", onKeyDown, false);
-window.addEventListener("mousedown", onMouseDown, false);
-window.addEventListener("mouseup", onMouseUp, false);
-*/
 gameCanvas.oncontextmenu = function() {
-   //alert('right click');   
-   //onRightClick();
    return false;
 }	
 var mapWidth = 2560;
@@ -201,6 +195,8 @@ function Hobo(x, y) {
 	this.radius = 25;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
+	var array = [4, this];
+	this.Body.SetUserData(array);
 }
 
 var carOrientation = Player.orientation;
@@ -245,61 +241,31 @@ var canPlaySplat = true;
 var splatDelayMS = 200;
 
 var enterable = false;
-
 Hobo.prototype.update = function(name) {
-	//console.log(Agents.length);
-	for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
-		//console.log(enemy);
-		if (Agents.length > 0) {
-			if (utils.areColliding(Player.x, Player.y, Player.radius, Agents[enemy].x, Agents[enemy].y, Agents[enemy].radius)) {
-				//console.log('hit');
-			}
-		}
-	}
+	
 	var bodily = this.Body.GetContactList();
 	if(bodily) {
 		do {
-			if(bodily.other.GetUserData(Punk)){ //if we are enemy it returns 1
-				//this.Body.SetUserData(this)
-				//console.log('Punk hit');
-				for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
+			if(bodily.other.GetUserData()[0] == 2){ //if we are an enemy
+				//for (var enemy = Agents.length - 1; enemy >= 0; --enemy) {
 					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
-						//console.log(bodily.contact.IsTouching(Punk));
-						//console.log('hit');
-						//this.Body.SetUserData(this)
-						//console.log(bodily.other.GetUserData());
-						//crushed = bodily.other.GetUserData(this);
-						//Agents[enemy].x = -10000;
 						if (state == 1) {
 							if (canPlaySplat) {
-								if (pSpeed >5){
-								crushed = bodily.other.GetUserData();
+								crushed = bodily.other.GetUserData()[1];
 								world.DestroyBody(crushed.Body);
-								
 								var bodySplat = new Agent(crushed.x,crushed.y);
 								splats.push(bodySplat);
-								
 								Agents.splice(Agents.indexOf(crushed),1);
 								crush.play();
 								canPlaySplat = false;
 								window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
 								score += 1;
-								}
 							}
 						}
-					//Agents.Splice(enemy,1);
-					i = bodily.other.GetUserData(this);
-					//gameState = 3;
-					//console.log('Hit!');
-					//destroyFixture();		
-					//i = bodily.other.GetUserData();
-					//Agents.splice(i,1);
-					//i.x = -100000;
 					}
-				}
-			} else {
-				if(!bodily.next){
-				//console.log('Wall hit');
+				//}
+			} 
+			else if(bodily.other.GetUserData()[0] == 1){ //if we are a wall
 				if (pSpeed >=10) {
 					if (canPlayCrash) {
 						//console.log(pSpeed);
@@ -309,27 +275,12 @@ Hobo.prototype.update = function(name) {
 						
 					}
 				}
-				}
 			}
-			if(!bodily.next){
-				if (pSpeed >=10) {
-					if (canPlayCrash) {
-						//console.log(pSpeed);
-						//crash.play();
-						canPlayCrash = false;
-						window.setTimeout(function() { canPlayCrash = true; }, crashDelayMS);
-						
-					}
-				}
-				break;
-			} else{bodily = bodily.next}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
 		}while(1)
 	}
-	/*
-	utils.areColliding = function(x1, y1, radius1, x2, y2, radius2) {
-	return utils.getDistance(x1, y1, x2, y2) <= radius1 + radius2;
-	}
-	*/
 	for (var car = cars.length - 1; car >= 0; --car) {
 		if (utils.areColliding(this.x,this.y, this.radius,cars[car].x, cars[car].y,cars[car].radius)) {
 			//console.log('hit!');
@@ -387,13 +338,6 @@ Hobo.prototype.update = function(name) {
 		//enforce max velocity
 		var vel = this.Body.GetLinearVelocity();
 		this.orientation = Math.atan2(vel.y,vel.x);
-		//console.log(vel.y);
-		//var speed = vel.Normalize();
-		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
-		//console.log(speed);
-		//console.log(vel.x);
-		//console.log(vel.y);
-		//update where our hobo is on screen
 		var thevec = this.Body.GetPosition();
 		this.x = thevec.x * SCALE;
 		this.y = thevec.y * SCALE;
@@ -463,14 +407,7 @@ Hobo.prototype.update = function(name) {
 		
 		var vel = this.Body.GetLinearVelocity();
 		this.orientation = Math.atan2(vel.y,vel.x);
-		
-		//var speed = vel.Normalize();
-		//this.Body.ApplyForce((0.05 * -vel), this.Body.GetWorldCenter());
-		//console.log(speed);
-		//console.log(vel.x);
-		//console.log(vel.y);
-		//update where our hobo is on screen
-		
+
 		var thevec = this.Body.GetPosition();
 		this.x = thevec.x * SCALE;
 		this.y = thevec.y * SCALE;
@@ -496,15 +433,16 @@ Hobo.prototype.update = function(name) {
 		}
 	}
 	
-	if (cPoints == 67) {
+	if (cPoints == 2) {
 		mission = 3;
 	}
 	
 }
+
 punkSpeed = 0;
 //our hateable antagonists
-function Punk(x, y, t, i) {
-	this.indexLoc = i;
+function Punk(x, y, t) {
+	//this.indexLoc = i;
 	this.x = x;
 	this.y = y;
 	this.type = t;
@@ -526,8 +464,9 @@ function Punk(x, y, t, i) {
 	this.radius = .5;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	this.Body.SetUserData(this)
-	
+	//this.Body.SetUserData(this)
+	var array = [2, this];
+	this.Body.SetUserData(array);
 		// arrive radius for beginning to slow down
 	this.slowRadius = 64;
 	
@@ -550,13 +489,9 @@ Punk.prototype.draw = function(ox,oy) {
 	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 	context.rotate(this.orientation + (Math.PI/2));
 	
-	//context.drawImage(imageLoader.images["splat"],-16,-16);
-	
 	if (punkSpeed <= .25) {
-			//context.drawImage(imageLoader.images["player"],-16,-16);
 			if (this.type == 1) {
-				context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
-			//console.log('Stopped');
+				context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 			} else {
 				context.drawImage(imageLoader.images["walksheet3"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 			}
@@ -568,7 +503,6 @@ Punk.prototype.draw = function(ox,oy) {
 				} else {
 					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 				}
-				//console.log('Fast');
 				frameTimeSeconds = 1 / 7;
 			} else {
 				if (this.type == 1) {
@@ -576,7 +510,6 @@ Punk.prototype.draw = function(ox,oy) {
 				} else {
 					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
 				}
-				//console.log('Medium');
 				frameTimeSeconds = 1 / 4;
 			}
 	}
@@ -652,13 +585,6 @@ Punk.prototype.update = function(SteeringForce) {
 	if (vel.y <= -5) {
 		vel.y = -5;
 	}
-	/*if (Player.isFiring && Player.canFire) {
-		Agents.push(new Punk(Player.x - Player.orientation, Player.y- Player.orientation));
-		shootSfx.play();
-		Player.canFire = false;
-		//attachBulletPfx(bullet);
-		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
-	}*/
 }
 Punk.prototype.removeCoins = function(amount){
 	var done = false;
@@ -674,9 +600,63 @@ Punk.prototype.removeCoins = function(amount){
 function Gun(x, y) {
 	this.x = x;
 	this.y = y;
+	this.damage = 5;
 	this.orientation = 0;
-	this.maxAcceleration = .2;
-	var lastseenx = 0, lastseeny = 0, lastsight = 0;
+	this.held = 0;
+	this.active = 1;
+	this.bullets = []
+}
+
+Gun.prototype.draw = function(ox,oy) {
+	if(this.held && this.active){
+		//held sprite
+		
+	}
+	else {
+		context.save();
+		context.translate(this.x, this.y);
+		context.fillStyle = "grey";
+		context.beginPath();
+		context.closePath();
+		//dropped sprite
+	}
+}
+
+Gun.prototype.update = function(SteeringForce) {
+	
+	if(this.held){
+		this.x=Player.x;
+		this.y=Player.y;
+	}
+	if(this.active) {
+		if (Player.isFiring && Player.canFire) {
+			var dx = mouse.x - canvas.width/2;
+			var dy = mouse.y - canvas.height/2;
+			var theta =  Math.atan2(dy,dx);
+			var result = new b2Vec2;
+			result.x = 20*Math.cos(theta);
+			result.y = 20*Math.sin(theta);
+			this.bullets.unshift(new Bullet(Player.x+10*Math.cos(theta),Player.y+10*Math.sin(theta),this.damage));
+			this.bullets[0].Body.ApplyImpulse(result, this.bullets[0].Body.GetWorldCenter());
+			shootSfx.play();
+			Player.canFire = false;
+			//attachBulletPfx(bullet);
+			window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
+		}
+	}
+	for(i = 0; i < this.bullets.length; i++) {
+		this.bullets[i].update(this);
+	}
+}
+
+function Bullet(x,y,d) {
+	
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.damage = d;
+	this.type = 2;
+	this.trail = [];
 	//begin initialization of BOX2D object
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 4;
@@ -686,74 +666,73 @@ function Gun(x, y) {
 	this.bodyDef.type = b2Body.b2_dynamicBody;
 	this.bodyDef.position.x = this.x / SCALE;
 	this.bodyDef.position.y = this.y / SCALE;
-	this.bodyDef.linearDamping = 0.5;
-	this.bodyDef.userData = 1;
-	this.fixDef.shape = new b2CircleShape(0.5);
+	this.bodyDef.bullet = true;
+	this.fixDef.shape = new b2CircleShape(0.1);
+	this.radius = .1;
 	this.Body = world.CreateBody(this.bodyDef);
 	this.Body.CreateFixture(this.fixDef);
-	this.Body.SetUserData(this)
+	var array = [0, this];
+	this.Body.SetUserData(array);
+}
+function tp(x,y,o) {
+	this.x=x;
+	this.y=y;
+	this.o=o;
 }
 
-Gun.prototype.draw = function(ox,oy) {
-	context.save();
-	context.strokeStyle = "black";
-	//context.strokeText(this.x + " " + this.y,canvas.height,0);
-	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
-	context.rotate(this.orientation - (Math.PI/2));
-	context.beginPath();
-	context.fillStyle = "magenta"
-	context.arc(0,0, 15, 0, 2 * Math.PI);
-	context.fill();
-	context.closePath();
-	context.beginPath();
-	context.fillStyle = "black";
-	context.moveTo(1,0);
-	context.lineTo(1,16);
-	context.lineTo(-1,16);
-	context.lineTo(-1,0);
-	context.closePath();
-	context.fill();
-	context.restore();
-	context.save()
-	if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
-		context.fillStyle = "magenta";
-		context.translate(canvas.width/2, canvas.height/2);
-		context.beginPath();
-		context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
-		context.translate(0, -200);
-		context.moveTo(0,0);
-		context.lineTo(7,7);
-		context.lineTo(-7,7);
-		context.closePath();
-		context.fill();
-		context.restore();
+Bullet.prototype.update = function(gun) {
+	//update
+	//console.log(state);
+		
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()[0] === 2){ //if we are an enemy
+				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+					if (canPlaySplat) {
+						crushed = bodily.other.GetUserData()[1];
+						world.DestroyBody(crushed.Body);
+						var bodySplat = new Agent(crushed.x,crushed.y);
+						splats.push(bodySplat);
+						Agents.splice(Agents.indexOf(crushed),1);
+						crush.play();
+						canPlaySplat = false;
+						window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+						score += 1;
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);	
+					}
+				}
+			} 
+			else if(bodily.other.GetUserData()[0] === 1){ //if we are a wall
+						
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);
+						//play impact effects
+			}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
+		}while(1)
 	}
-}
-
-Gun.prototype.update = function(SteeringForce) {
-	var force = new b2Vec2
-	if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 400)/*&&raycast(this.Body, player.Body) != Player.Body;*/{
-		force = flee(this, Player.x, Player.y);
-	}
-	//lostsight += 1*REFMULTI
-	force.x = force.x*REFMULTI;
-	force.y = force.y*REFMULTI;
-	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+	
 	var vel = this.Body.GetLinearVelocity();
 	this.orientation = Math.atan2(vel.y,vel.x);
 	var thevec = this.Body.GetPosition();
 	this.x = thevec.x * SCALE;
 	this.y = thevec.y * SCALE;
 	
-	console.log('Gun here!');
-
-	if (Player.isFiring && Player.canFire) {
-		Guns.push(new Gun(Player.x - Player.orientation, Player.y - Player.orientation));
-		shootSfx.play();
-		Player.canFire = false;
-		//attachBulletPfx(bullet);
-		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
-	}
+	//draw
+	
+	context.save();
+	context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+	context.beginPath();
+	context.fillStyle = "white";
+	context.arc(0,0,3,0,2*Math.PI);
+	context.fill();
+	context.closePath();
+	context.restore();
+		
 }
 
 function spawnController() {
@@ -763,16 +742,20 @@ function spawnController() {
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1, Agents.length-1));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1));
 		}
 		for(i = 0; i < 30; i++){ //make punks amount
 			var a = utils.getRandomInteger(0, Roads.length - 1);
 			var b = Roads[a];
 			var c = utils.getRandomInteger(0, b.width);
 			var d = utils.getRandomInteger(0, b.height);
-			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2, Agents.length-1));
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2));
 		}
 	}
+	this.updateSpawns = function() {
+		if(stars > 0){
+		}
+	}	
 }
 
 carSound = false;
@@ -926,8 +909,6 @@ function onMouseUp(e) {
 
 drawn = false;
 built = false;
-//1 = building, 2 = vert, 3 = horiz, 4 = inters
-//var i = 36;
 var roads1 = 2;
 var bldg = 12;
 var roads2 = 28;
@@ -958,12 +939,6 @@ function mapObject(x, y, h, w, t) {
 	this.height = h;
 	this.width = w;
 	this.type = t;
-	/* 
-	type 
-		1 = building
-		2 = road
-		3 = intersecton
-	*/
 	if(this.type >= 12) {
 		if(this.type <= 27) {
 		//set up BOX2D object
@@ -974,13 +949,13 @@ function mapObject(x, y, h, w, t) {
 		this.bodyDef = new b2BodyDef;
 		this.bodyDef.type = b2Body.b2_staticBody;
 		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
-		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;
-		//this.bodyDef.position.x = Math.floor((this.x + (this.width/2)) / SCALE);
-		//this.bodyDef.position.y = Math.floor((this.y + (this.height/2)) / SCALE);		
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;	
 		this.fixDef.shape = new b2PolygonShape();
 		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
 		this.Body = world.CreateBody(this.bodyDef);
 		this.Body.CreateFixture(this.fixDef);
+		var array = [1,this];
+		this.Body.SetUserData(array);
 		}
 	}
 	
@@ -1241,72 +1216,6 @@ function Agent(x,y,t) {
 	}
 }
 
-//BULLET FUNCTION
-function updateBullets() {
-	
-	var dx = mouse.x - canvas.width/2;//Player.x;
-	var dy = mouse.y - canvas.height/2;//Player.y;
-	
-	//this.orientation = Math.atan2(dy, dx);
-	
-	mouseOrientation =  Math.atan2(dy,dx);
-	
-	bullRot = mouseOrientation;//Player.orientation;
-	
-	if (Player.isFiring && Player.canFire) {
-		var bullet = new Agent();
-		bullet.x = Player.x;
-		bullet.y = Player.y;//-5;
-		bullet.radius = 2;
-		bullets.push(bullet);
-		bullRots.push(bullRot);
-		//console.log(bullets.length);
-		shootSfx.play();
-		Player.canFire = false;
-		//attachBulletPfx(bullet);
-		window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
-		//ship.canFire = false;
-		//setTimeout(function(){ship.canFire = true},500);
-	}
-	
-	for (var i = bullets.length - 1; i >= 0; --i) {
-		for (var i = bullRots.length - 1; i >= 0; --i) {	
-			var blt = bullets[i];
-			var bltRot = bullRots[i];
-			//bullRot = agent.orientation;
-			//bullRots.push(bullRot);	
-			
-			//CORRECT(?) Movement
-			blt.x += Math.cos(bltRot)*bullSpeed;
-			blt.y += Math.sin(bltRot)*bullSpeed;
-			
-			//blt.x = canvas.width/2;
-			//blt.y = canvas.height/2;
-			
-			//this.rotation = ship.orientation;
-			
-			//Correct rotation
-			blt.orientation += .51;
-			
-			//bullets[i].orientation = ship.orientation;//utils.getMagnitude(ship.vx, ship.vy);
-			
-			//screen wrapping
-			/*if (blt.x >= canvas.width - blt.radius || blt.x <= blt.radius || blt.y >= canvas.height - blt.radius || blt.y <= blt.radius) {
-				bullets.splice(i,1);
-				bullRots.splice(i,1);
-				//wallSfx.play();
-			}	*/	
-		}
-	}
-}
-
-function drawBullets() {
-	for (var i = 0; i < bullets.length; ++i) {
-		for (var i = 0; i < bullRots.length; ++i) {
-			bullets[i].drawBul();
-		}
-	}
-}
 
 var enterCar = new Agent(Player.x+175,Player.y+100);
 cars.push(enterCar);
@@ -1675,25 +1584,13 @@ function drawHud(p,c,e) {
 	context.fillRect(60,canvas.height-260,199,199);
 	context.restore();
 	context.save();
-	//context.drawImage(imageLoader.images["map_full"],32,canvas.height-294);
-	//context.translate(canvas.width/2, canvas.height/2);
-	//context.translate(Math.floor(this.x-Player.x+canvas.width/2), Math.floor(this.y-Player.x+canvas.height/2));
-	//context.drawImage(imageLoader.images["map_full2"], Player.x/33.28, Player.y/33.22, cameraWidth, camerHeight, 64, canvas.height-256, 192, 192);
 	context.fillStyle = "rgba(255, 255, 255, 0.5)";
 	context.fillRect(64,canvas.height-256,192,192);
 	context.restore();
 	context.save();
-	//console.log(Player.x);
 	context.drawImage(imageLoader.images["map_full3"], Player.x*.05 - 96, Player.y*.05 - 96, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
-	//context.drawImage(imageLoader.images["map_full3"], Player.x/canvas.width, Player.y/canvas.height, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
-	//context.drawImage(imageLoader.images["map_full3"], Player.x/13312, Player.y/8704, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
-	//context.drawImage(imageLoader.images["map_full3"], Player.x/666, Player.y/435, 666/10, 435/10, 64, canvas.height-256, 192, 192);
-	//context.drawImage(imageLoader.images["map_full3"], Player.x/666, Player.y/435, 666, 435, 64, canvas.height-256, 192, 192);
 	context.restore();
 	context.fillStyle = "black";
-	//context.rotate(Player.orientation + (Math.PI/2));
-	
-	//context.fillRect(64+91,canvas.height-165,10,10);
 	context.save();
 	context.translate(64+96,canvas.height-160)
 	context.rotate(Player.orientation - (Math.PI/2));
@@ -1718,6 +1615,7 @@ function drawHud(p,c,e) {
 	context.fillText("frame time: " + e, 16, 32);
 	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);	
 	context.fillText('Punks left: ' + Agents.length, 16, 128);
+	context.fillText('Bullets: ' + Guns.bullets.length, 16, 96);
 	context.restore();
 	
 	
@@ -1798,13 +1696,9 @@ function drawHud(p,c,e) {
 		//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
 	} else if (mission == 4) { //Carnage Finish
 		context.save();
-		//console.log('Mission 2');
 		context.fillStyle = "white";
 		context.font = '20pt Calibri';
-		//context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
-		//context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
 		context.fillText("You ran over " + scoreOld + " people!", canvas.width/2-75, canvas.height/2-128);
-		//context.fillText("Your time was " + scoreMin + ":" + secondZero, canvas.width/2-100, canvas.height/2-64);
 		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+128);
 		context.restore();
 	}
@@ -1839,24 +1733,23 @@ function drawWpCirc() {
 	context.save();
 	context.beginPath();
 	context.fillStyle = "rgba(255, 242, 0, 0.5)";
-	//context.arc(canvas.width/2,canvas.height/2, 50, 0, 2 * Math.PI);
+	context.strokeStyle = 'black';
 	context.arc(0,0, 75, 0, 2 * Math.PI);
-	//drawCircle(wpTargetX, wpTargetY, 20);
 	context.fill();
 	context.closePath()
 	context.restore();
 }
 
 function drawWP(ox,oy) {
-	//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
 	context.save();
 	context.translate(wpTargetX-ox+canvas.width/2, wpTargetY-oy+canvas.height/2);
+	context.rotate(-Math.atan2(wpTargetX - wpTargetX2, wpTargetY - wpTargetY2) + Math.PI);
+	context.drawImage(imageLoader.images["arrow"],-64,-64);
 	drawWpCirc();
 	context.restore();
 	context.save();
 	
 	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 250 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 15000){
-		//console.log('test2');
 		context.save();
 		context.fillStyle = "red";
 		context.translate(canvas.width/2, canvas.height/2);
@@ -1869,7 +1762,6 @@ function drawWP(ox,oy) {
 		context.closePath();
 		context.fill();
 		context.restore();
-		//Second Arrow
 	}
 	if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 1 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 600) {
 		context.save();
@@ -1900,26 +1792,18 @@ function initGame() {
 	
 	
 	(function tick() {
-		//context.clearRect(0, 0, canvas.width, canvas.height);
-		//window.requestAnimationFrame(tick);
 		detectViewportChange();
 		context.clearRect(0, 0, canvas.width, canvas.height);
-		//miniContext.drawImage(imageLoader.images["mapM2"],miniCanvas.width,miniCanvas.height);
 		if(gameState == 0) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(imageLoader.images["title"],0,0);
-			//context.drawImage(imageLoader.images["title2"],0,0);
 			context.fillStyle = "white";
-			context.font = '30pt Calibri';
-			
-			//context.fillText("Press the 'E' key to enter and exit your vehicle" , canvas.width/2-350, canvas.height/2 +235);
-			//context.fillText("Press the 'E' key at the pay phones to start a mission" , canvas.width/2-450, canvas.height/2 +275);			
+			context.font = '30pt Calibri';			
 		}
 		if (Agents.length < 60) {
 			spawner.initWorld();
 		}
 		if(gameState == 1) {
-			//console.log(gameState);
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			world.Step((1/60),10,10);
 			
@@ -1977,15 +1861,6 @@ function initGame() {
 				agent.update();
 				agent.draw(Player.x, Player.y);
 			}
-			/*for(var i = 0; i < Guns.length; ++i) {
-				var agent = Guns[i];
-				agent.update();
-				agent.draw(Player.x, Player.y);
-			}*/
-			
-			//Car.update();
-			//Car.draw();
-			//ship.draw();
 			
 			context.save();
 			drawSplat();
@@ -1993,26 +1868,6 @@ function initGame() {
 			Player.update();
 			Player.draw();
 			
-			/*if (chars.length == 0) {
-				//car1Sfx.fadeOut(0, 100);
-				car1Sfx.stop();
-				carSound = false;
-			}
-			if(chars.length > 0) {
-				while (!carSound) {
-					//car1Sfx.fadeIn(.1, 10);
-					car1Sfx.play();
-					carSound = true;
-				}
-			}*/
-			
-			/*if (carSound) {
-				car1Sfx.play();
-			} else {
-				car1Sfx.stop();
-			}*/
-			
-			//console.log(Player.v);
 			if (pSpeed > 2) {
 				
 				if (state == 1) {
@@ -2076,32 +1931,17 @@ function initGame() {
 					stepSound = false;
 				}
 			}
-			//console.log(pSpeed);
-			//Gun.update();
-			//Guns.draw(Player.x, Player.y);
 			
-			//spawner.update();
-			//console.log(bullets.length);
-			//console.log(targetX);
-			
-			//drawCircle(mouse.x, mouse.y, 12);
-			
-			//spawner.update();
+			Guns.update();
+			Guns.draw();
 			updateCar();
 			updatePhone();
 			drawPhone();
-			updateBullets();
-			drawBullets();
 			
-			//console.log(points);
-			//console.log(points);
 			if (mission == 2) {
 				if (wpTargetX != -1) {
 					drawWP(Player.x, Player.y);
-					//context.strokeStyle = "red";
-					//drawCircle(wpTargetX, wpTargetY, 8);
 					if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 100) {	
-						//console.log('Waypoint!');
 						getNextWaypoint();
 					}
 				}
