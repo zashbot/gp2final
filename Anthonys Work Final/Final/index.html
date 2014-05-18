@@ -42,6 +42,7 @@ imageLoader.queueImage("walksheet3");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
 imageLoader.queueImage("splat");
+imageLoader.queueImage("kill");
 imageLoader.queueImage("phone");
 imageLoader.queueImage("arrow");
 imageLoader.queueImage("map_full");
@@ -118,6 +119,7 @@ var chars = [];
 var cars = [];
 var phones = [];
 var splats = [];
+var kills = [];
 
 var state = 0;
 
@@ -692,8 +694,8 @@ Bullet.prototype.update = function(gun) {
 					if (canPlaySplat) {
 						crushed = bodily.other.GetUserData()[1];
 						world.DestroyBody(crushed.Body);
-						var bodySplat = new Agent(crushed.x,crushed.y);
-						splats.push(bodySplat);
+						var bodyKill = new Agent(crushed.x,crushed.y);
+						kills.push(bodyKill);
 						Agents.splice(Agents.indexOf(crushed),1);
 						crush.play();
 						canPlaySplat = false;
@@ -1195,24 +1197,32 @@ function Agent(x,y,t) {
 	}
 	
 	this.drawCar = function() {
-			context.save();
-			context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
-			context.rotate(carOrientation + (Math.PI/2));
-			context.drawImage(imageLoader.images["car2"],-16,-32);
-			context.restore();	
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.rotate(carOrientation + (Math.PI/2));
+		context.drawImage(imageLoader.images["car2"],-16,-32);
+		context.restore();	
 	}
 	
 	this.drawPhone = function() {
-			context.save();
-			context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
-			context.drawImage(imageLoader.images["phone"],-16,-16);
-			context.restore();	
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.drawImage(imageLoader.images["phone"],-16,-16);
+		context.restore();	
 	}
 	this.drawSplat = function() {
-			context.save();
-			context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
-			context.drawImage(imageLoader.images["splat"],-16,-16);
-			context.restore();
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		//context.rotate(utils.getRandomInteger(0,180));
+		context.drawImage(imageLoader.images["splat"],-16,-16);
+		context.restore();
+	}
+	this.drawKill = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		//context.rotate(utils.getRandomInteger(0,180));
+		context.drawImage(imageLoader.images["kill"],-16,-16);
+		context.restore();
 	}
 }
 
@@ -1312,6 +1322,9 @@ function checkPhone() {
 function drawSplat() {
 	for (var i = 0; i < splats.length; ++i) {
 		splats[i].drawSplat();
+	}
+	for (var i = 0; i < kills.length; ++i) {
+		kills[i].drawKill();
 	}
 }
 //WAYPOINTS
