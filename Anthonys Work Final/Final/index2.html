@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)https://dl.dropboxusercontent.com/u/25337488/web/hobo/hobo.html -->
+<html><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>AKA: 187</title>
+<style>
+	body { 
+		background-color:black;
+	}
+	canvas {
+		background-color:black;
+	}
+	#display {
+		margin-bottom: 25px;
+		cursor: crosshair;
+		margin-left:auto;
+		margin-right: auto;
+	}
+</style>
+<body>
+<center>
+<div id="display">
+<canvas id="gameCanvas" style="z-index: 1;" width="1280" height="800"></canvas>
+</div>
+</center>
+<div id="mini">
+<canvas id="miniCanvas" style="z-index: 2;" width="100" height="100"></canvas>
+</div>
+<script src="./scripts/utils.js"></script>
+<script src="./scripts/imageLoader.js"></script>
+<script src="./scripts/box2d.js"></script>
+<script src="./scripts/ship.js"></script>
+<script src="./scripts/howler.js"></script>
+<script>
+
+//console.log('start');
+imageLoader.queueImage("car");
+imageLoader.queueImage("car2");
+imageLoader.queueImage("player");
+imageLoader.queueImage("spritesheet");
+imageLoader.queueImage("walksheet");
+imageLoader.queueImage("walksheet2");
+imageLoader.queueImage("walksheet3");
+imageLoader.queueImage("title");
+imageLoader.queueImage("title2");
+imageLoader.queueImage("splat");
+imageLoader.queueImage("kill");
+imageLoader.queueImage("impact");
+imageLoader.queueImage("muzzle");
+imageLoader.queueImage("phone");
+imageLoader.queueImage("arrow");
+imageLoader.queueImage("water");
+imageLoader.queueImage("wp");
+imageLoader.queueImage("star");
+//imageLoader.queueImage("map_full");
+//imageLoader.queueImage("map_full2");
+imageLoader.queueImage("map_full3");
+var car1Sfx = new Howl({urls: ["audio/car1.wav", "audio/car1.mp3"], volume:0.1, loop:true});
+var step1 = new Howl({urls: ["audio/step1.wav", "audio/step1.mp3"], volume:0.1,	loop:true});
+var carO = new Howl({urls: ["audio/carO.wav", "audio/carO.mp3"], volume:0.5});
+var carC = new Howl({urls: ["audio/carC.wav", "audio/carC.mp3"], volume:0.5});
+var shootSfx = new Howl({urls: ["audio/shoot.wav", "audio/shoot.mp3"], volume: 0.1});
+var checkP = new Howl({urls: ["audio/checkP.wav", "audio/checkP.mp3"], volume: 0.1});
+var phoneSfx = new Howl({urls: ["audio/phone.wav", "audio/phone.mp3"], volume: 0.1, loop: true});
+var hello = new Howl({urls: ["audio/hello.wav", "audio/hello.mp3"], volume:0.1});
+var carnageSfx = new Howl({urls: ["audio/carnage.wav", "audio/carnage.mp3"], volume:0.5});
+//var step = new Howl({urls: ["audio/step.wav", "audio/step.mp3"], volume:0.1,	loop:true});
+//var step2 = new Howl({urls: ["audio/step2.wav", "audio/step2.wav"], volume:0.1,	loop:true});
+//var splat = new Howl({urls: ["audio/splat.wav", "audio/splat.wav"], volume:0.1});
+//var squish = new Howl({urls: ["audio/squish.wav", "audio/squish.wav"], volume:0.1});
+var crush = new Howl({urls: ["audio/crush.wav", "audio/crush.mp3"], volume:0.1});
+var crash = new Howl({urls: ["audio/crash.wav", "audio/crash.mp3"], volume:0.1});
+var bImpact = new Howl({urls: ["audio/bimpact.wav", "audio/bimpact.wav"], volume:0.025});
+var ugh = new Howl({urls: ["audio/ugh.wav", "audio/ugh.wav"], volume:0.1});
+imageLoader.loadQueuedImages(initGame);
+
+//console.log('done!');
+
+
+var REFMULTI = 2; //1= 120hz 2 =60hz
+
+var canvas = document.getElementById("gameCanvas");
+var context = canvas.getContext("2d");
+
+var miniCanvas = document.getElementById("miniCanvas");
+var miniContext = miniCanvas.getContext("2d");
+
+var mouse = utils.captureMouse(canvas);
+
+//box2d stuff
+var SCALE = 30;
+var SCALE2 = 15;
+
+var world;
+var b2Vec2 = Box2D.Common.Math.b2Vec2;
+var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+var b2Body = Box2D.Dynamics.b2Body;
+var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+var b2Fixture = Box2D.Dynamics.b2Fixture;
+var b2World = Box2D.Dynamics.b2World;
+var b2MassData = Box2D.Collision.Shapes.b2MassData;
+var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+var b2AABB = Box2D.Collision.b2AABB;
+var b2WorldManifold = Box2D.Collision.b2WorldManifold;
+var b2ManifoldPoint = Box2D.Collision.b2ManifoldPoint;
+var b2RayCastInput = Box2D.Collision.b2RayCastInput;
+var b2RayCastOutput = Box2D.Collision.b2RayCastOutput;
+var b2Listener = Box2D.Dynamics.b2ContactListener;
+
+world = new b2World(new b2Vec2(0,0), true);
+
+var Player = new Hobo(1408,1408);
+Player.canFire = true;
+var turnspeed = 1;
+//var Car = new Hobo(1000,1664);
+
+var Agents = [];
+var Guns = new Gun();
+var Pickups = [];
+var Buildings = [];
+var Roads = [];
+var Intersections = [];
+var chars = [];
+var cars = [];
+var phones = [];
+var splats = [];
+var kills = [];
+
+var state = 0;
+
+function stopSound() {
+	car1Sfx.stop();
+}
+window.addEventListener("keydown", function(e) {
+	if(chars.indexOf(e.keyCode) == -1) {
+		chars.push(e.keyCode);
+		//console.log(chars.toString());
+	}
+}, false);
+
+window.addEventListener("keyup", function(e) {
+	var index = chars.indexOf(e.keyCode);
+	chars.splice(index, 1);
+}, false);
+gameCanvas.oncontextmenu = function() {
+   return false;
+}	
+var mapWidth = 2560;
+var mapHeight = 2560;
+
+var gameState = 0;
+
+var cols = 52;
+var rows = 34;
+var tileSize = 256;
+
+var map = [27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 33, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 4, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 5, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 19, 20, 36, 19, 20, 11, 19, 23, 20, 11, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 36, 22, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 36, 36, 36, 36, 36, 8, 10, 10, 10, 6, 26, 18, 18, 18, 24, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 8, 10, 10, 10, 10, 6, 26, 18, 18, 24, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 19, 20, 36, 19, 20, 11, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 15, 16, 16, 13, 11, 22, 25, 25, 21, 8, 9, 10, 10, 10, 1, 10, 10, 10, 10, 6, 22, 21, 36, 22, 21, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 7, 10, 9, 10, 10, 7, 6, 15, 16, 13, 11, 19, 23, 23, 20, 8, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 19, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 3, 5, 15, 13, 11, 22, 18, 18, 24, 11, 19, 23, 23, 23, 20, 11, 12, 12, 12, 11, 22, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 25, 25, 18, 24, 11, 26, 18, 24, 12, 11, 12, 12, 11, 36, 26, 18, 24, 11, 22, 25, 25, 25, 21, 11, 14, 14, 14, 8, 10, 10, 10, 9, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 18, 18, 24, 11, 22, 21, 36, 36, 22, 21, 11, 26, 18, 24, 17, 11, 17, 17, 11, 36, 22, 25, 24, 8, 10, 10, 10, 10, 10, 1, 10, 10, 9, 2, 36, 19, 20, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 26, 18, 24, 8, 10, 10, 10, 10, 10, 10, 6, 22, 25, 21, 14, 11, 14, 14, 11, 36, 36, 36, 14, 11, 19, 23, 23, 23, 20, 11, 12, 12, 11, 36, 19, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 36, 22, 25, 21, 11, 19, 23, 23, 23, 23, 20, 8, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 14, 14, 11, 19, 18, 18, 24, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 6, 26, 18, 18, 18, 18, 24, 11, 19, 23, 23, 20, 11, 27, 27, 11, 19, 23, 23, 20, 8, 10, 10, 10, 9, 10, 7, 10, 10, 6, 22, 25, 25, 21, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 15, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 25, 21, 11, 27, 27, 11, 22, 25, 25, 21, 11, 19, 23, 20, 11, 19, 23, 23, 20, 8, 10, 10, 9, 10, 1, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 9, 10, 7, 10, 10, 10, 10, 1, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 26, 18, 18, 24, 11, 19, 20, 11, 12, 11, 12, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 15, 16, 16, 16, 16, 13, 11, 15, 13, 11, 15, 16, 16, 13, 11, 26, 18, 24, 11, 26, 18, 18, 24, 11, 22, 21, 11, 14, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 19, 23, 20, 4, 10, 10, 7, 10, 10, 7, 5, 19, 23, 20, 11, 22, 25, 21, 11, 22, 25, 25, 21, 8, 10, 10, 1, 10, 6, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 23, 20, 11, 26, 18, 24, 8, 10, 10, 10, 7, 10, 9, 10, 10, 6, 19, 20, 11, 12, 11, 17, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 26, 18, 24, 11, 26, 18, 18, 18, 18, 24, 11, 26, 18, 24, 11, 19, 23, 23, 23, 20, 11, 19, 20, 11, 22, 21, 11, 14, 11, 14, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 8, 10, 10, 10, 10, 1, 10, 10, 10, 10, 6, 26, 18, 24, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 26, 18, 18, 18, 24, 11, 26, 24, 8, 10, 10, 7, 10, 7, 10, 6, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 19, 23, 23, 20, 11, 19, 23, 23, 20, 11, 22, 25, 21, 8, 10, 10, 10, 10, 10, 10, 1, 10, 10, 10, 6, 22, 25, 25, 25, 21, 11, 22, 21, 11, 19, 23, 23, 23, 23, 20, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 26, 18, 18, 24, 11, 26, 18, 18, 24, 8, 10, 10, 10, 6, 19, 23, 23, 23, 23, 20, 11, 19, 23, 20, 8, 10, 10, 10, 10, 10, 7, 10, 10, 6, 15, 16, 16, 16, 16, 13, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 11, 22, 25, 25, 21, 11, 22, 25, 25, 21, 11, 15, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 22, 25, 21, 11, 15, 16, 16, 16, 16, 16, 16, 13, 11, 22, 25, 25, 25, 25, 21, 11, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 3, 10, 10, 10, 10, 7, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 10, 10, 10, 10, 10, 10, 2, 36, 31, 27, 27, 27, 27, 27, 27, 29, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 31, 27, 27, 27, 27, 27, 27, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 35, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27];
+
+function SteeringForce() {
+	this.x = 0;
+	this.y = 0;
+}
+
+var steeringForce = new SteeringForce();
+
+//******************
+//*	    ACTORS     *
+//******************
+
+//the Hobo, our loveable little playable character who must collect change to live.
+function Hobo(x, y) {
+	this.x = x;
+	this.y = y;
+	this.height = 16;
+	this.width = 16;
+	this.orientation = 0;
+	this.carX = this.x;
+	this.carY = this.y;
+	this.health = 100;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 5.0;
+	this.fixDef.friction = 0;
+	this.fixDef.restitution = 0.00;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	
+	this.bodyDef.linearDamping = 1.0;
+	
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.radius = 25;
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	var array = [4, this];
+	this.Body.SetUserData(array);
+}
+
+var carOrientation = Player.orientation;
+
+var tileSizeW = 32;
+var tileSizeH = 96;
+	
+Hobo.prototype.draw = function() {
+	//draw hobo
+	
+	context.save();
+	
+	context.translate(canvas.width/2, canvas.height/2);
+	context.rotate(Player.orientation + (Math.PI/2));
+	
+	if (state == 1) {
+		//var img=document.getElementById("car");
+		//context.drawImage(img,-16,-32);
+		context.drawImage(imageLoader.images["car"],-16,-32);
+	} else {
+		if (pSpeed <= .25) {
+			frameTimeSeconds = 1 / 7;
+			context.drawImage(imageLoader.images["player"],-16,-16);
+			//console.log('Stopped');
+			
+		} else {
+			if (pSpeed >= 1) {
+				frameTimeSeconds = 1 / 7;
+				//context.drawImage(imageLoader.images["walksheet"], 0*tileSizeH, currentFrame * frameHeight, tileSizeH, tileSizeW, -16, -16, tileSizeW, tileSizeH);
+				
+				//context.drawImage(imageLoader.images["walksheet"], 0*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+				
+				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				//console.log('Fast');
+				
+			} else {
+				frameTimeSeconds = 1 / 4;
+				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				//console.log('Medium');
+				
+			}
+		}
+	}
+	if (Player.isFiring && Player.canFire) {
+		context.save();
+		//context.rotate(mouseOrientation + (Math.PI/2));
+		var dx = mouse.x - canvas.width/2;//Player.x;
+		var dy = mouse.y - canvas.height/2;//Player.y;
+		mouseOrientation =  Math.atan2(dy,dx);
+		
+		//context.rotate(mouseOrientation + (Math.PI/2));
+		context.drawImage(imageLoader.images["muzzle"],-16,-32);
+		context.restore();
+	}
+	context.restore();
+}
+
+//force = new b2Vec2(0,0);
+pSpeed = 0;
+var canPlayCrash = true;
+var crashDelayMS = 500;
+var canPlaySplat = true;
+var splatDelayMS = 200;
+var canHurt = true;
+var hurtDelayMS = 200;
+
+
+var enterable = false;
+Hobo.prototype.update = function(name) {
+	
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()[0] == 2){ //if we are an enemy
+					if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+						if (state == 1) {
+							if (canPlaySplat) {
+								crushed = bodily.other.GetUserData()[1];
+								world.DestroyBody(crushed.Body);
+								var bodySplat = new Agent(crushed.x,crushed.y);
+								splats.push(bodySplat);
+								Agents.splice(Agents.indexOf(crushed),1);
+								crush.play();
+								canPlaySplat = false;
+								window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+								score += 1;
+								stars = 1;
+							}
+						} else {
+							crushed2 = bodily.other.GetUserData()[1];
+							if (crushed2.type == 2) {
+								if (stars != 0) {	
+									if (canHurt) {	
+										Player.health-=5;
+										canHurt = false;
+										window.setTimeout(function() { canHurt = true; }, hurtDelayMS);
+									}
+								}
+							}
+						}
+					}
+			} 
+			else if(bodily.other.GetUserData()[0] == 1){ //if we are a wall
+				if (pSpeed >=10) {
+					if (canPlayCrash) {
+						//console.log(pSpeed);
+						crash.play();
+						canPlayCrash = false;
+						window.setTimeout(function() { canPlayCrash = true; }, crashDelayMS);
+						
+					}
+				}
+			}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
+		}while(1)
+	}
+	for (var car = cars.length - 1; car >= 0; --car) {
+		if (utils.areColliding(this.x,this.y, this.radius,cars[car].x, cars[car].y,cars[car].radius)) {
+			//console.log('hit!');
+			enterable = true;
+		} else {
+			enterable = false;
+		}
+	}
+	
+	if (state == 1) {	//When in Car - Try to get handbrake working
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -turnspeed;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -turnspeed;
+				force.y = 0;
+				
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = turnspeed;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = turnspeed;
+				force.y = 0;
+			}
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = turnspeed;//0.75;
+				force.y = -turnspeed;//-0.75;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = turnspeed;//0.75;
+				force.y = turnspeed;//0.75;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -turnspeed;//-0.75;
+				force.y = turnspeed;//0.75;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -turnspeed;//-0.75;
+				force.y = -turnspeed;//-0.75;
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		var speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);//vel.Normalize();
+		pSpeed = speed;
+	
+		
+		if (vel.x >= 25) {
+			vel.x = 25;
+		}
+		if (vel.x <= -25) {
+			vel.x = -25;
+		}
+		if (vel.y >= 25) {
+			vel.y = 25;
+		}
+		if (vel.y <= -25) {
+			vel.y = -25;
+		}
+	} else {
+		
+		//keyboard input for our hobo
+		force = new b2Vec2(0,0);
+		if(chars.length === 1 ) { //if one key is pressed
+			
+			if (chars[0] == 87) { //W
+				force.x = 0;
+				force.y = -1;
+			}
+			else if (chars[0] == 65) { //A
+				force.x = -1;
+				force.y = 0;
+			}
+			else if (chars[0] == 83) { //S
+				force.x = 0;
+				force.y = 1;
+			}
+			else if (chars[0] == 68) { //D
+				force.x = 1;
+				force.y = 0;
+			}
+		}
+		else if(chars.length >= 2) { //if two keys are pressed
+			if (chars.indexOf(87) > -1 && chars.indexOf(68) > -1) { //W+D
+				force.x = 0.5;
+				force.y = -0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(68) > -1) { //D+S
+				force.x = 0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(83) > -1 && chars.indexOf(65) > -1) { //S+A
+				force.x = -0.5;
+				force.y = 0.5;
+			}
+			if (chars.indexOf(87) > -1 && chars.indexOf(65) > -1) { //W+A
+				force.x = -0.5;
+				force.y = -0.5;
+			}
+		}
+		
+		
+		force.x = force.x*REFMULTI;
+		force.y = force.y*REFMULTI;
+
+		this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+		//enforce max velocity
+		
+		var vel = this.Body.GetLinearVelocity();
+		this.orientation = Math.atan2(vel.y,vel.x);
+
+		var thevec = this.Body.GetPosition();
+		this.x = thevec.x * SCALE;
+		this.y = thevec.y * SCALE;
+		
+		var speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);//vel.Normalize();
+		pSpeed = speed;
+
+		
+		//console.log(force.x);
+		
+		if (vel.x >= 7) {
+			vel.x = 7;
+		}
+		if (vel.x <= -7) {
+			vel.x = -7;
+		}
+		if (vel.y >= 7) {
+			vel.y = 7;
+		}
+		if (vel.y <= -7) {
+			vel.y = -7;
+		}
+	}
+	
+	if (cPoints == 67) {
+		mission = 3;
+	}
+	
+}
+
+punkSpeed = 0;
+//our hateable antagonists
+function Punk(x, y, t) {
+	//this.indexLoc = i;
+	this.x = x;
+	this.y = y;
+	this.type = t;
+	this.orientation = utils.getRandomInteger(0,180);//0;
+	this.maxAcceleration = .2;
+	var lastseenx = 0, lastseeny = 0, lastsight = 0;
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 4;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.2;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.linearDamping = 0.5;
+	this.bodyDef.userData = 1;
+	this.fixDef.shape = new b2CircleShape(0.5);
+	this.radius = .5;
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	//this.Body.SetUserData(this)
+	var array = [2, this];
+	this.Body.SetUserData(array);
+		// arrive radius for beginning to slow down
+	this.slowRadius = 64;
+	
+	// used for wander behavior
+	this.wanderRadius = 20;
+	this.wanderOffset = 128;
+	this.wanderRate = .55;
+	this.wanderAngle = 0;
+}
+var carnage = true;
+
+var stars = 0;
+
+Punk.prototype.draw = function(ox,oy) {
+	context.save();
+	context.strokeStyle = "black";
+	context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+	context.rotate(this.orientation + (Math.PI/2));
+	
+	if (punkSpeed <= .25) {
+			frameTimeSeconds = 1 / 7;
+			if (this.type == 1) {
+				context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+			} else {
+				context.drawImage(imageLoader.images["walksheet3"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+			}
+	} else {
+			if (punkSpeed >= 1) {
+				frameTimeSeconds = 1 / 7;
+				if (this.type == 1) {	
+					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				} else {
+					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				}
+				
+			} else {
+				frameTimeSeconds = 1 / 4;
+				if (this.type == 1) {
+					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				} else {
+					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				}
+				
+			}
+	}
+	context.restore();
+	context.save()
+	
+	//Arrow
+	if (mission == 1) {
+		if(utils.getDistance(this.x, this.y, Player.x, Player.y) > 200 && utils.getDistance(this.x, this.y, Player.x, Player.y) < 1000){
+			//console.log('test2');
+			context.fillStyle = "white";
+			context.translate(canvas.width/2, canvas.height/2);
+			context.beginPath();
+			context.rotate(-Math.atan2(this.x - Player.x, this.y - Player.y) + Math.PI);
+			context.translate(0, -200);
+			context.moveTo(0,0);
+			context.lineTo(7,7);
+			context.lineTo(-7,7);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	} else {
+		
+	}
+}
+
+Punk.prototype.update = function(SteeringForce) {
+	var force = new b2Vec2
+	if (this.type == 1) {	
+		if (state == 1) {	
+			if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200){
+				force = evade(this, Player.x, Player.y);
+			} else {
+				force = wander(this, steeringForce);
+			}
+		} else {
+			force = wander(this, steeringForce);
+		}
+	} else {
+		if (stars == 0) {	
+			if (state == 1) {	
+				if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 200){
+					force = evade(this, Player.x, Player.y);
+				} else {
+					force = wander(this, steeringForce);
+				}
+			} else {
+				force = wander(this, steeringForce);
+			}
+		} else {
+			if((utils.getDistance(this.x, this.y, Player.x, Player.y)) < 1000){
+				force = pursue(this, Player.x, Player.y);
+			} else {
+				force = wander(this, steeringForce);
+			}
+		}
+	}
+	//lostsight += 1*REFMULTI
+	force.x = force.x*REFMULTI;
+	force.y = force.y*REFMULTI;
+	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+	var speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);//vel.Normalize();
+	punkSpeed = speed;
+	
+	if (vel.x >= 5) {
+		vel.x = 5;
+	}
+	if (vel.x <= -5) {
+		vel.x = -5;
+	}
+	if (vel.y >= 5) {
+		vel.y = 5;
+	}
+	if (vel.y <= -5) {
+		vel.y = -5;
+	}
+}
+//our bouncing bullets
+function Gun(x, y) {
+	this.x = x;
+	this.y = y;
+	this.damage = 5;
+	this.orientation = 0;
+	this.held = 0;
+	this.active = 1;
+	this.bullets = []
+}
+
+Gun.prototype.draw = function(ox,oy) {
+	if(this.held && this.active){
+		//held sprite
+		
+	}
+	else {
+		context.save();
+		context.translate(this.x, this.y);
+		context.fillStyle = "grey";
+		context.beginPath();
+		context.closePath();
+		//dropped sprite
+	}
+}
+
+Gun.prototype.update = function(SteeringForce) {
+	
+	if(this.held){
+		this.x=Player.x;
+		this.y=Player.y;
+	}
+	if(this.active) {
+		if (Player.isFiring && Player.canFire) {
+			var dx = mouse.x - canvas.width/2;
+			var dy = mouse.y - canvas.height/2;
+			var theta =  Math.atan2(dy,dx);
+			var result = new b2Vec2;
+			result.x = bullSpeed*Math.cos(theta);
+			result.y = bullSpeed*Math.sin(theta);
+			this.bullets.unshift(new Bullet(Player.x+10*Math.cos(theta),Player.y+10*Math.sin(theta),this.damage));
+			this.bullets[0].Body.ApplyImpulse(result, this.bullets[0].Body.GetWorldCenter());
+			shootSfx.play();	
+			Player.canFire = false;
+			//attachBulletPfx(bullet);
+			window.setTimeout(function() { Player.canFire = true; }, bulletFireDelayMs);
+		}
+	}
+	for(i = 0; i < this.bullets.length; i++) {
+		this.bullets[i].update(this);
+	}
+}
+function Bullet(x,y,d) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.damage = d;
+	this.type = 2;
+	this.trail = [];
+	//begin initialization of BOX2D object
+	this.fixDef = new b2FixtureDef;
+	this.fixDef.density = 4;
+	this.fixDef.friction = 0.0;
+	this.fixDef.restitution = 0.2;
+	this.bodyDef = new b2BodyDef;
+	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = this.x / SCALE;
+	this.bodyDef.position.y = this.y / SCALE;
+	this.bodyDef.bullet = true;
+	this.fixDef.shape = new b2CircleShape(0.1);
+	this.radius = .1;
+	this.Body = world.CreateBody(this.bodyDef);
+	this.Body.CreateFixture(this.fixDef);
+	var array = [0, this];
+	this.Body.SetUserData(array);
+}
+function tp(x,y,o) {
+	this.x=x;
+	this.y=y;
+	this.o=o;
+}
+
+Bullet.prototype.update = function(gun) {
+	//update
+	//console.log(state);
+		
+	var bodily = this.Body.GetContactList();
+	if(bodily) {
+		do {
+			if(bodily.other.GetUserData()[0] === 2){ //if we are an enemy
+				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
+					if (canPlaySplat) {
+						crushed = bodily.other.GetUserData()[1];
+						world.DestroyBody(crushed.Body);
+						var bodyKill = new Agent(crushed.x,crushed.y);
+						kills.push(bodyKill);
+						Agents.splice(Agents.indexOf(crushed),1);
+						ugh.play();
+						canPlaySplat = false;
+						window.setTimeout(function() { canPlaySplat = true; }, splatDelayMS);
+						score += 1;
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);
+						if (mission == 0) {
+							stars = 1;
+						}
+					}
+				}
+			} 
+			else if(bodily.other.GetUserData()[0] === 1){ //if we are a wall
+						bImpact.play();
+						context.save();
+						context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+						context.drawImage(imageLoader.images["impact"],0,0);
+						context.restore();	
+						world.DestroyBody(this.Body);
+						gun.bullets.splice(gun.bullets.indexOf(this),1);
+						//play impact effects
+			}
+			
+			if(!bodily.next){break;}
+			else {bodily = bodily.next;}
+		}while(1)
+	}
+	
+	var vel = this.Body.GetLinearVelocity();
+	this.orientation = Math.atan2(vel.y,vel.x);
+	var thevec = this.Body.GetPosition();
+	this.x = thevec.x * SCALE;
+	this.y = thevec.y * SCALE;
+	
+	//draw
+	
+	context.save();
+	context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+	context.beginPath();
+	context.fillStyle = "white";
+	context.arc(0,0,3,0,2*Math.PI);
+	context.fill();
+	context.closePath();
+	context.restore();
+		
+}
+
+function spawnController() {
+	this.initWorld = function() {
+		for(i = 0; i < 30; i++){ //make punks amount
+			var a = utils.getRandomInteger(0, Roads.length - 1);
+			var b = Roads[a];
+			var c = utils.getRandomInteger(0, b.width);
+			var d = utils.getRandomInteger(0, b.height);
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 1));
+		}
+		for(i = 0; i < 20; i++){ //make punks amount
+			var a = utils.getRandomInteger(0, Roads.length - 1);
+			var b = Roads[a];
+			var c = utils.getRandomInteger(0, b.width);
+			var d = utils.getRandomInteger(0, b.height);
+			Agents.push(new Punk(Roads[a].x + c, Roads[a].y + d, 2));
+		}
+	}
+	this.updateSpawns = function() {
+		if(stars > 0){
+		
+		}
+	}	
+}
+
+carSound = false;
+stepSound = false;
+
+//KEY FUNCTIONS
+function onKeyDown(e) {
+	switch(e.keyCode) {
+		case 69: // E
+			
+			break;
+		case 37:      //left
+			force.x = -1;
+			force.y = 0;
+          break;
+        case 39:      //right
+			force.x = 1;
+			force.y = 0;
+          break;
+        case 38:      //up
+			force.x = 0;
+			force.y = -1;
+		  break;
+		case 40:      //Down
+			force.x = 0;
+			force.y = 1;
+          break;
+		case 13:      //Enter
+
+
+          break;
+		case 32:      //Space
+		//turnspeed = 2;
+          break;		  
+	};
+}
+inCar = false;
+function onKeyUp(e) {
+	switch(e.keyCode) {
+		case 69: // E
+			if (enterable) {
+				state = 1;
+				inCar = true;
+				enterable = false;
+				//cars.splice(1,1);
+				cars = [];
+				carO.play();
+				step1.stop();
+				//console.log(cars.length);
+				
+			} else {
+				if (state == 1) {
+					state = 0;
+					inCar = false;
+					carOrientation = Player.orientation;
+					car1Sfx.stop();
+					carC.play();
+					car1Sfx.stop();
+				}
+				//car1Sfx.stop();
+			}
+			if (checkPhone()) {
+				if (pType == 1) {
+					if (mission == 0) {
+						startTime = new Date();
+						mission = 1;
+						hello.play();
+						hudDisplay = true;
+						window.setTimeout(function() { carnageSfx.play(); }, 1000);
+						//phone2Sfx.play();
+					}
+				//console.log(pType);
+				} else if (pType == 2) {
+					if (mission == 0){
+						points = 0;
+						//checkRace = true;
+						startTime = new Date();
+						mission = 2;
+						hello.play();
+						hudDisplay = true;
+						//phone2Sfx.play();
+						wpTargetX = waypoints[points].x;
+						wpTargetY = waypoints[points].y;
+					}
+				}
+			}
+			
+			break;
+		case 71:      //'G'
+			if (!mission == 0) {
+				mission = 0;
+				cPoints = 0;
+				laps = 0;
+				score = 0;
+			}
+          break;	
+		case 37:      //left
+			force.x = 0;
+			force.y = 0;
+          break;
+        case 39:      //right
+			force.x = 0;
+			force.y = 0;
+          break;
+        case 38:      //up
+			force.x = 0;
+			force.y = 0;
+          break;
+		case 40:      //Down
+			force.x = 0;
+			force.y = 1;
+          break;	
+		case 13:      //Enter
+			if (gameState == 0) {
+				gameState = 1;
+			}
+			if (mission == 3 || mission == 4) {
+				mission = 0;
+				cPoints = 0;
+				laps = 0;
+				score = 0;
+			}
+          break;
+		case 27:      //Esc
+			if (gameState == 1) {
+				gameState = 2;
+				Howler.mute();
+				paused = true;
+				pausedTime = startTime;
+				//pausedTime = seconds2;
+				//currTime = new Date();
+				//var endTime = new Date();
+				//var endTime = currTime;
+			} else  if (gameState == 2) {
+				gameState = 1;
+				Howler.unmute();
+				//seconds2 = pausedTime;
+				paused = false;
+				startTime = pausedTime;
+			}
+          break;
+		case 49:      //#1
+          break;
+		case 50:      //#2
+          break;		  
+		case 32:      //Space
+		//turnspeed = 1;
+          break;			  
+	};
+}
+
+function onMouseDown(e) {
+	//shootSfx.play();
+	Player.isFiring = true;
+	//ship.isFiring = true;
+}
+function onMouseUp(e) {
+	Player.isFiring = false;
+	//ship.isFiring = false;
+}
+//******************
+//*	   OBJECTS     *
+//******************
+
+drawn = false;
+built = false;
+var roads1 = 2;
+var bldg = 12;
+var roads2 = 28;
+
+function buildMap(){
+		for (var ii = 0; ii < rows; ii++){
+			for(var kk = 0; kk < cols; kk++){
+				var indexLoc = kk + ii*cols;
+				var i = map[indexLoc];
+				if (map[indexLoc] == 1) {
+					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,1));
+					built = true;
+				} else if (map[indexLoc] >= 2 && map[indexLoc] <= 11) {
+					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+				} else if (map[indexLoc] >= 12 && map[indexLoc] <= 27) {
+					Buildings.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+				} else if (map[indexLoc] >= 28 && map[indexLoc] <= 36) {
+					Roads.push(new mapObject(kk*tileSize,ii*tileSize,tileSize,tileSize,i));
+				}
+				i--;
+			}
+		}
+}
+
+function mapObject(x, y, h, w, t) {
+	this.x = x;
+	this.y = y;
+	this.height = h;
+	this.width = w;
+	this.type = t;
+	if(this.type >= 12) {
+		if(this.type <= 27) {
+		//set up BOX2D object
+		this.fixDef = new b2FixtureDef;
+		this.fixDef.density = 5.0;
+		this.fixDef.friction = 0.5;
+		this.fixDef.restitution = .00;
+		this.bodyDef = new b2BodyDef;
+		this.bodyDef.type = b2Body.b2_staticBody;
+		this.bodyDef.position.x = (this.x + (this.width/2)) / SCALE;
+		this.bodyDef.position.y = (this.y + (this.height/2)) / SCALE;	
+		this.fixDef.shape = new b2PolygonShape();
+		this.fixDef.shape.SetAsBox(this.width/2/SCALE, this.height/2/SCALE);
+		this.Body = world.CreateBody(this.bodyDef);
+		this.Body.CreateFixture(this.fixDef);
+		var array = [1,this];
+		this.Body.SetUserData(array);
+		}
+	}
+	
+}
+
+doneDraw = false;
+
+mapObject.prototype.draw = function(ox,oy) {
+	if(this.type == 1) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();
+	}	else if(this.type == 2) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 3) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 4) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 5) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 6) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 7) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 8) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 9) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 10) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 11) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 12) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 13) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 14) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 15) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 16) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 17) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 18) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 19) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 20) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 1*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 21) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 22) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 23) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 24) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 25) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 26) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 27) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		//context.translate(this.x-ox+canvas.width/2, this.y-oy+canvas.height/2);
+		context.drawImage(imageLoader.images["spritesheet"], 6*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 28) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 7*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 29) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 8*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 30) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 9*tileSize, 2*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 31) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 0*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 32) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 1*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 33) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 2*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 34) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 3*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 35) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 4*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}	else if(this.type == 36) {
+		context.save();
+		context.translate(Math.floor(this.x-ox+canvas.width/2), Math.floor(this.y-oy+canvas.height/2));
+		context.drawImage(imageLoader.images["spritesheet"], 5*tileSize, 3*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
+		context.restore();	
+	}
+}
+
+mapObject.prototype.update = function() {
+		//drawn;
+
+}
+function drawCircle(x, y, radius) {
+	context.save();
+	context.strokeStyle = "red";
+	context.fillStyle = 'red';
+	context.beginPath();
+	context.arc(x, y, radius, 0, 2 * Math.PI);
+	context.stroke();
+	context.fill();
+	context.restore();
+}
+//AGENT
+function Agent(x,y,t) {
+	this.x = x;
+	this.y = y;
+	this.orientation = 0;
+	this.rotation = 0;
+	this.alpha = .5;
+	this.scale = 1;
+	this.type = t;
+	this.maxSpeed = 1;
+	this.maxAcceleration = 1.25;
+	
+	this.radius = 25;
+	
+	//Bullet Draw
+	this.drawBul = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.lineWidth = 2;
+		context.strokeStyle = "yellow";
+		//context.fillStyle = "red";
+		context.beginPath();
+		context.moveTo(-5,5);
+		context.lineTo(-5,-5);
+		context.lineTo(5,-5);
+		context.lineTo(5,5);
+		context.lineTo(-5,5);
+		context.lineTo(5,5);
+		context.moveTo(5,-5);
+		context.lineTo(-5,5);
+		context.stroke();
+		context.restore();
+	}
+	
+	this.drawCar = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.rotate(carOrientation + (Math.PI/2));
+		context.drawImage(imageLoader.images["car2"],-16,-32);
+		context.restore();	
+	}
+	
+	this.drawPhone = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		context.drawImage(imageLoader.images["phone"],-16,-16);
+		context.restore();	
+	}
+	this.drawSplat = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		//context.rotate(utils.getRandomInteger(0,180));
+		context.drawImage(imageLoader.images["splat"],-16,-16);
+		context.restore();
+	}
+	this.drawKill = function() {
+		context.save();
+		context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
+		//context.rotate(utils.getRandomInteger(0,180));
+		context.drawImage(imageLoader.images["kill"],-16,-16);
+		context.restore();
+	}
+}
+
+
+var enterCar = new Agent(Player.x+175,Player.y+100);
+cars.push(enterCar);
+
+function updateCar() {
+		if (cars.length < 1 && !inCar) {
+			var enterCar = new Agent(Player.x,Player.y);
+			cars.push(enterCar);
+		}
+}
+function drawCar() {
+	for (var i = 0; i < cars.length; ++i) {
+		cars[i].drawCar();
+	}
+}
+
+//Phone Booths
+var mission = 0;
+
+var phoneb1 = new Agent(Player.x+5000,Player.y+5025, 1);
+phones.push(phoneb1);
+
+var phoneb2 = new Agent(Player.x+250,Player.y+100, 2);
+phones.push(phoneb2);
+
+var phoneCanPlay = 0;
+
+function updatePhone() {
+	if (mission == 0) {
+		for (var i = 0; i < phones.length; ++i) {
+			//PHONE SOUND
+			if (utils.getDistance(phones[0].x, phones[0].y, Player.x, Player.y) <= 700 || utils.getDistance(phones[1].x, phones[1].y, Player.x, Player.y) <= 700) {
+				phoneCanPlay += 1;
+				if (phoneCanPlay == 1) {
+					phoneSfx.play();
+					//phoneCanPlay = 0;
+				}
+			} else {
+				phoneCanPlay = 0;
+				phoneSfx.stop();
+			}
+		}
+	} else {
+		phoneCanPlay = 0;
+		phoneSfx.stop();
+	}
+}
+
+function drawPhone() {
+	for (var i = 0; i < phones.length; ++i) {
+		phones[i].drawPhone();
+		if (mission == 0) {
+			if(utils.getDistance(phones[i].x, phones[i].y, Player.x, Player.y) > 200){
+				context.fillStyle = "yellow";
+				context.translate(canvas.width/2, canvas.height/2);
+				context.beginPath();
+				context.rotate(-Math.atan2(phones[i].x - Player.x, phones[i].y - Player.y) + Math.PI);
+				context.translate(0, -200);
+				context.moveTo(0,0);
+				context.lineTo(7,7);
+				context.lineTo(-7,7);
+				context.closePath();
+				context.fill();
+				context.restore();
+			} else {
+				context.fillStyle = "yellow";
+				context.translate(phones[i].x-Player.x+canvas.width/2, phones[i].y-Player.y+canvas.height/2);
+				context.beginPath();
+				context.translate(0, -20);
+				context.moveTo(0,0);
+				context.lineTo(-7,-7);
+				context.lineTo(7,-7);
+				context.closePath();
+				context.fill();
+				context.restore();
+			}
+		}
+	}
+}
+
+var pType = 0;
+
+function checkPhone() {
+	if (mission == 0) {	
+		for (var i = 0; i < phones.length; ++i) {
+			if (utils.getDistance(phones[i].x, phones[i].y, Player.x, Player.y) <= 30) {
+				pType = phones[i].type;
+				return true;
+			}
+		}
+	}
+}
+
+function drawSplat() {
+	for (var i = 0; i < splats.length; ++i) {
+		splats[i].drawSplat();
+	}
+	for (var i = 0; i < kills.length; ++i) {
+		kills[i].drawKill();
+	}
+}
+//WAYPOINTS
+function wp(x, y){
+	this.x = x;
+	this.y = y;
+}
+
+//Waypoints number
+var points = 0;
+var cPoints = 0;
+var laps = 0;
+var startTime;
+var timerEnd = 60;
+var startTimer;
+var paused = false;
+var tickPause;
+var tickSec;
+var tickMin;
+var currTime;
+var pausedTime;
+var timeDiffPaused;
+var seconds2;
+
+//Waypoints Array			
+var waypoints = [new wp(4000,1400), 
+				new wp(6500,1400), 
+				new wp(6500,2700),
+				new wp(7800,2700),
+				new wp(7800,2200),
+				new wp(8600,2200),
+				new wp(8600,3000),
+				new wp(9350,3000),
+				new wp(9350,4500),
+				new wp(7800,4500),
+				new wp(7800,6500),
+				new wp(6800,6500),
+				new wp(6800,5500),
+				new wp(5800,5500),
+				new wp(5800,5000),
+				new wp(2700,5000),
+				new wp(2700,4000),
+				new wp(4500,4000),
+				new wp(4500,3000),
+				new wp(2700,3000),
+				new wp(2700,2450),
+				new wp(4000,2450)];
+
+//GET NEXT WAYPOINT
+function getNextWaypoint() {
+	points++;
+	if (points >= waypoints.length) {
+		points = 0;
+		laps++;
+		//cPoints++;
+	}
+	if (points == 1 && laps == 0) {
+			laps = 1;
+			startTime = new Date();
+	}
+	wpTargetX = waypoints[points].x;
+	wpTargetY = waypoints[points].y;
+	
+	if (points == waypoints.length-1) {
+		wpTargetX2 = waypoints[0].x;
+		wpTargetY2 = waypoints[0].y;		
+	} else {
+		wpTargetX2 = waypoints[points+1].x;
+		wpTargetY2 = waypoints[points+1].y;
+	}
+	checkP.play();
+	cPoints++;
+	ScoreSecOld = scoreSec;
+	ScoreMinOld = scoreMin;
+	//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
+}
+
+var wpTargetX = waypoints[points].x;
+var wpTargetY = waypoints[points].y;
+
+var wpTargetX2 = waypoints[(points+1)].x;
+var wpTargetY2 = waypoints[(points+1)].y;
+
+//BULLETS
+var bullets = [];
+var bullRot = 0;
+var bullRots = [];
+var bullPos = [];
+var bullSpeed = 5;
+var bulletFireDelayMs = 200;
+
+//**********************
+//* STEERING BEHAVIORS *
+//**********************
+
+function ease1(t, b, c, d) {//Ease in Quintic
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(tc*ts);
+}
+function easeIQr(t) {//Easing In Quart
+	return t*t*t*t;
+}
+function easeOQn(t) {//Easing Out Quint
+	return 1+(--t)*t*t*t*t
+}
+function ease2(t, b, c, d) {
+	var ts=(t/=d)*t;
+	var tc=ts*t;
+	return b+c*(1.5*tc*ts + -2*ts*ts + 3*tc + -2*ts + 0.5*t);
+}
+function seek(agent, targetX, targetY) {//move toward
+	var x = targetX - agent.x;
+	var y = targetY - agent.y;
+	
+	var distance = utils.getMagnitude(x, y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+	
+}
+function arrive(agent, targetX, targetY) {
+	var result = new b2Vec2;
+	//get direction from agent to target
+	var directionX = targetX - agent.x;
+	var directionY = targetY - agent.y;
+	
+	// normalize direction
+	var distance = utils.getMagnitude(directionX, directionY);
+	directionX = directionX / distance; 
+	directionY = directionY / distance; 
+	
+	if (distance > 200) {
+		targetSpeed = agent.maxAcceleration;
+	}
+	else {
+		targetSpeed = agent.maxAcceleration * distance / 200;
+	}
+	var targetVelocityX = directionX * targetSpeed;
+	var targetVelocityY = directionY * targetSpeed;
+
+	// steer toward desired velocity
+	result.x = (targetVelocityX - agent.Body.GetLinearVelocity.x);
+	result.y = (targetVelocityY - agent.Body.GetLinearVelocity.y);
+	
+	return result;
+}
+function flee(agent, targetX, targetY) {// move away
+	var x = agent.x - targetX;
+	var y = agent.y - targetY;
+	
+	var distance = Math.sqrt(x * x + y * y);
+	
+	x = x / distance * agent.maxAcceleration;
+	y = y / distance * agent.maxAcceleration;
+	
+	var result = new b2Vec2;
+	result.x = x;
+	result.y = y;
+	return result;
+}
+function pursue(agent, targetX, targetY) {// move toward target future position
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return seek(agent, targetNewX, targetNewY);
+}
+function evade(agent, targetX, targetY) {// evade away from future target position
+	var dx = targetX - agent.x;
+	var dy = targetY - agent.y;
+	
+	var dist = Math.sqrt(dx * dx + dy *dy);
+	
+	//var t = dist / targetMaxS;
+	var t = dist * 0.1;
+	var vec = Player.Body.GetLinearVelocity();
+	var targetNewX = vec.x * t + targetX;
+	var targetNewY = vec.y * t + targetY;
+	return flee(agent, targetNewX, targetNewY);
+}
+function wander(agent, steeringForce) {
+
+	// perturb wander angle by a small random amount.
+	var deltaWander = Math.random() * agent.wanderRate;
+	agent.wanderAngle += Math.random() > 0.5 ? deltaWander : -deltaWander;
+			
+	// move target to wanderOffset in front of agent
+	var targetX = agent.x + Math.cos(agent.orientation) * agent.wanderOffset + Math.cos(agent.wanderAngle) * agent.wanderRadius;
+	var targetY = agent.y + Math.sin(agent.orientation) * agent.wanderOffset + Math.sin(agent.wanderAngle) * agent.wanderRadius;
+	
+	return seek(agent, targetX, targetY, steeringForce);
+}	
+function separation(agent, neighbors) {
+	for (var i = 0; i < neighbors.length; ++i) {
+		var toAgentX = agent.x - neighbors[i].x;
+		var toAgentY = agent.y - neighbors[i].y;
+		var toAgentMagnitude = utils.getMagnitude(toAgentX, toAgentY);
+		if (toAgentMagnitude > 0) {
+			var normalizedToAgentX = toAgentX / toAgentMagnitude;
+			var normalizedToAgentY = toAgentY / toAgentMagnitude;
+			
+			// scale force to inversely proportional to distance from neighbor:
+			this.steeringForce.x += normalizedToAgentX / toAgentMagnitude;
+			this.steeringForce.y += normalizedToAgentY / toAgentMagnitude;
+		}
+	}
+}
+
+//init();
+buildMap();
+var spawner = new spawnController();
+spawner.initWorld();
+
+var targetX = Player.x;
+var targetY = Player.y;
+var targetX2 = mouse.x;//waypoints[points].x;
+var targetY2 = mouse.y;//waypoints[points].y; 
+
+var checkRace = false;
+ 
+// image data
+var frameWidth = 96;
+var frameHeight = 32;
+
+ // animation data
+var startFrame = 0;
+var endFrame = 2;
+var currentFrame = startFrame;
+var animationTimer = 0;
+var frameTimeSeconds = 1 / 7; // i.e., 15 frames per second
+var previousTime = Date.now();
+var scoreSec = 0;
+var scoreMin = 0;
+var scoreSecOld = 0;
+var scoreMinOld = 0;
+var score = 0;
+var scoreOld = 0;
+
+
+var mouseOrientation = 0;
+ 
+var oldWidth = document.body.clientWidth;
+var oldHeight = document.body.clientHeight;
+
+function detectViewportChange(){
+	
+	var currentHeight = document.body.clientHeight;
+    var currentWidth = document.body.clientWidth; 
+	
+	if(currentWidth != oldWidth || currentHeight != oldHeight){
+		oldWidth = currentWidth;
+		oldHeight = currentHeight;
+		
+		canvas = document.getElementById("gameCanvas");
+		context = canvas.getContext("2d");
+		mouse = utils.captureMouse(canvas);
+	}
+}
+
+cameraWidth = 192;
+cameraHeight = 192;
+var hudDisplay = false;
+var hudDisplayMS = 4000;
+var a;
+var b;
+function drawHud(p,c,e) {
+	context.save();
+	context.fillStyle = "black";
+	context.fillRect(60,canvas.height-260,199,199);
+	context.restore();
+	context.save();
+	context.fillStyle = "rgba(255, 255, 255, 0.5)";
+	context.fillRect(64,canvas.height-256,192,192);
+	context.drawImage(imageLoader.images["water"],64,canvas.height-256,192,192);
+	context.restore();
+	context.save();
+	
+	context.drawImage(imageLoader.images["map_full3"], Player.x*.05 - 96, Player.y*.05 - 96, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
+	
+	context.drawImage(imageLoader.images["phone"], Player.x*.10 - 330, Player.y*.10 - 330, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
+	context.drawImage(imageLoader.images["phone"], Player.x*.10 - 820, Player.y*.10 - 825, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
+	
+	if (stars !=0) {
+		context.save();
+		context.fillStyle = b;
+		context.fillRect(60,canvas.height-260,199,199);
+		context.restore();
+	
+		if (currentFrame == 0) {
+			b = 'rgba(255,0,0,.25)';
+		} else {
+			b = 'rgba(0,0,255,.25)';
+		}
+	}
+	if (mission == 2) {
+		context.save();
+		context.translate(64,canvas.height-256);
+		context.moveTo((Player.x - wpTargetX)/.20,  (Player.y - wpTargetY)/.20);
+		drawCircle(wpTargetX,wpTargetY,8);
+		context.restore();
+	}
+	
+	/*
+	//context.translate(wpTargetX-ox+canvas.width/2, wpTargetY-oy+canvas.height/2);
+	if (mission == 2) {
+		//drawCircle(Player.x*.10 - 330, Player.y*.10 - 330, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
+		
+		//context.translate(wpTargetX-Player.x+canvas.width/2, wpTargetY-Player.y+canvas.height/2);
+		context.translate((wpTargetX*.2)-(Player.x*2)+((canvas.width/2)*.2), (wpTargetY*.2)-(Player.y*2)+((canvas.height/2)*.2));
+		context.drawImage(imageLoader.images["wp"],64,canvas.height-256);
+		
+		//context.drawImage(imageLoader.images["wp"], Player.x*.10 - wpTargetX*.145, Player.y*.10 - wpTargetY*.260, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
+		
+		//context.drawImage(imageLoader.images["wp"], Player.x*.1998798798798799 - wpTargetX*.2998798798798799, Player.y*.0250919540229885 - wpTargetY*.2000919540229885, cameraWidth*4, cameraHeight*4, 64, canvas.height-256, 192, 192);
+		
+		
+		//context.drawImage(imageLoader.images["wp"], Player.x*.1998798798798799 - wpTargetX2*.30, Player.y*.1998798798798799 - wpTargetY2*.235, cameraWidth*4, cameraHeight*4, 64, canvas.height-256, 192, 192);
+		
+		//context.drawImage(imageLoader.images["wp"], Player.x*.10 - wpTargetX2*.145, Player.y*.10 - wpTargetY2*.235, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
+		
+		//drawCircle(wpTargetX-Player.x+canvas.width/2, wpTargetY-Player.y+canvas.height/2);
+		//drawCircle(canvas.width/2, canvas.height/2, .5);
+		
+	}
+	*/
+	context.restore();
+	context.fillStyle = "black";
+	context.save();
+	context.translate(64+96,canvas.height-160)
+	context.rotate(Player.orientation - (Math.PI/2));
+	context.beginPath();
+	context.fillStyle = "lightblue"
+	context.arc(0,0, 5, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath()
+	context.beginPath()
+	context.fillStyle = "black"
+	context.lineWidth = 2;
+	context.moveTo(0,0);
+	context.lineTo(0,5);
+	context.stroke();
+	context.fill();
+	context.restore();
+	
+	//HUD STUFFS
+	/*
+	context.save();
+	context.fillStyle = "white";
+	context.font = '30pt Calibri';
+	context.fillText("frame time: " + e, 16, 32);
+	context.fillText("frame rate: " + Math.round((1.0 / e)), 16, 64);	
+	context.fillText('Punks left: ' + Agents.length, 16, 128);
+	context.fillText('Bullets: ' + Guns.bullets.length, 16, 96);
+	context.restore();*/
+	
+	
+	// Timer code from http://jsfiddle.net/cckSj/5/
+	// later record end time
+	//currTime = new Date();
+	
+	var endTime = new Date();
+	
+	//var endTime = currTime;
+	
+	// time difference in ms
+	var timeDiff = endTime - startTime;
+	
+	// strip the miliseconds
+	timeDiff /= 1000;
+	// get seconds
+	var seconds = Math.floor(timeDiff % 60);
+	// remove seconds from the date
+	timeDiff = Math.floor(timeDiff / 60);
+	// get minutes
+	var minutes = Math.floor(timeDiff % 60);
+	// remove minutes from the date
+	timeDiff = Math.floor(timeDiff / 60);
+	// get hours
+	var hours = Math.floor(timeDiff % 24);
+	// remove hours from the date
+	timeDiff = Math.floor(timeDiff / 24);
+	//Add 0 to seconds
+	var secondsZero = seconds;
+	
+	if(seconds <10) {
+		secondsZero = '0' + seconds;
+	}
+	
+	var tick = timerEnd - seconds;
+	
+	tickPause = tick;
+	tickSec = secondsZero;
+	tickMin = minutes;
+	
+	if (mission == 0) {
+		score = 0;
+		//mission = 1;
+	} else if (mission == 1) { // Carnage
+		context.save();
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Score: " + score, canvas.width/2-45, 32);	
+		context.fillText("Time: " + tick, canvas.width/2-45, 64);
+		
+		if (hudDisplay) {
+			context.fillText("Carnage! Kill as many people as possible!", canvas.width/2-245, canvas.height/2 + 300);
+			//hudDisplay = true;
+			window.setTimeout(function() { hudDisplay = false; }, hudDisplayMS);
+		}
+		context.restore();	
+		scoreOld = score;
+		if (tick <= 1) {
+			mission = 4;
+			tick = 60;
+		}
+	} else if (mission == 2) { //Checkpoint Race
+		stars = 0;
+		
+		context.save();
+		//console.log('Mission 2');
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
+		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
+		if ( laps == 0) { 
+			context.fillText("Time: " + '0:00', canvas.width/2-60, 32);
+		} else {
+			context.fillText("Time: " + minutes + ':' + secondsZero, canvas.width/2-60, 32);
+			scoreSec = seconds;
+			scoreMin = minutes;
+		}
+		if (hudDisplay) {
+			context.fillText("Get through the checkpoints as quick as possible!", canvas.width/2-250, canvas.height/2 + 300);
+			window.setTimeout(function() { hudDisplay = false; }, hudDisplayMS);
+		}
+		context.restore();
+	} else if (mission == 3) { //Checkpoint Finish
+		stars = 0;
+		var secondZero = scoreSec;
+		
+		if(scoreSec<10) {
+			secondZero = '0'+scoreSec;
+		}
+		context.save();
+		//console.log('Mission 2');
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("Checkpoint: " + cPoints +"/67", canvas.width - 220, 32);
+		context.fillText("Lap: " + laps +"/3", canvas.width - 130, 64);
+		context.fillText("You Finished!", canvas.width/2-75, canvas.height/2-128);
+		context.fillText("Your time was " + scoreMin + ":" + secondZero, canvas.width/2-100, canvas.height/2-64);
+		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+300);
+		context.restore();
+		//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
+	} else if (mission == 4) { //Carnage Finish
+		stars = 0;
+		context.save();
+		context.fillStyle = "white";
+		context.font = '20pt Calibri';
+		context.fillText("You killed " + scoreOld + " people!", canvas.width/2-105, canvas.height/2-128);
+		context.fillText("Press 'Enter' to continue", canvas.width/2-125, canvas.height/2+300);
+		context.restore();
+	}
+
+}
+
+function drawHeart(color){
+	context.save;
+	context.fillStyle = color;
+	context.scale(.25,.25);
+	context.beginPath();
+	context.moveTo(75,40);
+	context.bezierCurveTo(75,37,70,25,50,25);
+	context.bezierCurveTo(20,25,20,62.5,20,62.5);
+	context.bezierCurveTo(20,80,40,102,75,120);
+	context.bezierCurveTo(110,102,130,80,130,62.5);
+	context.bezierCurveTo(130,62.5,130,25,100,25);
+	context.bezierCurveTo(85,25,75,37,75,40);
+	context.fill();
+	context.restore();
+}
+//var alpha = 1;
+
+function drawStar(alpha){
+	context.save;
+	context.fillStyle = alpha;
+	//context.fillStyle = "rgba(132, 132, 132, alpha)";
+	//context.scale(.25,.25);
+	context.beginPath();
+	context.moveTo(15,0);
+	context.lineTo(18,10);
+	context.lineTo(30,10);
+	context.lineTo(22,18);
+	context.lineTo(24,30);
+	context.lineTo(15,22);
+	context.lineTo(6,30);
+	context.lineTo(9,18);
+	context.lineTo(0,10);
+	context.lineTo(11,10);
+	context.closePath();
+	context.fill();
+	context.strokeStyle = 'black';
+	context.stroke();
+	//console.log(alpha);
+	context.restore();
+}
+function drawHud2(){
+	context.save;
+	context.translate(64, canvas.height-48);
+	drawHeart("red");
+	context.translate(68.5, canvas.height-44);
+	//context.scale(.75,.75);
+	//drawHeart("blue");
+	context.restore();
+	context.save;
+	context.fillStyle = "white";
+	context.font = '14pt Calibri';
+	context.fillText(Player.health, 110, canvas.height-26);
+	context.restore;
+	
+	if (stars != 0) {
+		context.save();
+		
+		if (currentFrame == 0) {
+			a = 'red';
+		} else {
+			a = 'blue';
+		}
+		
+		//console.log(a);
+		context.translate(canvas.width-192, 32);
+		drawStar(a);
+		context.translate(canvas.width-160, 32);
+		drawStar(a);
+		context.translate(canvas.width-128, 32);
+		drawStar(a);
+		context.translate(canvas.width-96, 32);
+		drawStar(a);
+		context.translate(canvas.width-64, 32);
+		drawStar(a);
+		context.restore();
+	}
+}
+function drawWpCirc() {
+	context.save();
+	context.beginPath();
+	context.fillStyle = "rgba(255, 242, 0, 0.5)";
+	context.strokeStyle = 'black';
+	context.arc(0,0, 75, 0, 2 * Math.PI);
+	context.fill();
+	context.closePath()
+	context.restore();
+}
+
+function drawWP(ox,oy) {
+	context.save();
+	context.translate(wpTargetX-ox+canvas.width/2, wpTargetY-oy+canvas.height/2);
+	context.rotate(-Math.atan2(wpTargetX - wpTargetX2, wpTargetY - wpTargetY2) + Math.PI);
+	context.drawImage(imageLoader.images["arrow"],-64,-64);
+	drawWpCirc();
+	context.restore();
+	context.save();
+	
+	if(utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 250 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 15000){
+		context.save();
+		context.fillStyle = "red";
+		context.translate(canvas.width/2, canvas.height/2);
+		context.beginPath();
+		context.rotate(-Math.atan2(wpTargetX - Player.x, wpTargetY - Player.y) + Math.PI);
+		context.translate(0, -200);
+		context.moveTo(0,0);
+		context.lineTo(7,7);
+		context.lineTo(-7,7);
+		context.closePath();
+		context.fill();
+		context.restore();
+	}
+	if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) > 1 && utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 600) {
+		context.save();
+		context.fillStyle = "pink";
+		context.translate(canvas.width/2, canvas.height/2);
+		context.beginPath();
+		context.rotate(-Math.atan2(wpTargetX2 - Player.x, wpTargetY2 - Player.y) + Math.PI);
+		context.translate(0, -200);
+		context.moveTo(0,0);
+		context.lineTo(7,7);
+		context.lineTo(-7,7);
+		context.closePath();
+		context.fill();
+		context.restore();
+	}
+	
+	
+	context.restore();
+}
+
+function initGame() {
+	detectViewportChange();
+	window.addEventListener("keydown", onKeyDown, false);
+	window.addEventListener("keyup", onKeyUp, false);
+	window.addEventListener("mousedown", onMouseDown, false);
+	window.addEventListener("mouseup", onMouseUp, false);
+	
+	
+	
+	(function tick() {
+		detectViewportChange();
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		if(gameState == 0) {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(imageLoader.images["title"],0,0);
+			context.fillStyle = "white";
+			context.font = '30pt Calibri';
+			Player.health = 100;
+		}
+		if (Agents.length < 30) {
+			spawner.initWorld();
+		}
+		if(gameState == 1) {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			world.Step((1/60),10,10);
+			
+			//ANIMATION TIMING
+			var currentTime = Date.now();
+	
+			// divide by 1000 to convert millseconds to seconds....
+			var elapsedTime = (currentTime - previousTime) / 1000;
+			
+			// limit elapsed time to one animation frame so that the
+			// the animation does not run too fast when the window loses
+			// then regains focus.
+			if (elapsedTime > frameTimeSeconds) {
+				elapsedTime = frameTimeSeconds;
+			}
+			
+			animationTimer += elapsedTime;
+			
+			// flip to the next frame
+			if (animationTimer >= frameTimeSeconds) {
+				animationTimer -= frameTimeSeconds;
+				
+				currentFrame += 1;
+				
+				// if all frames have been displayed, go back to first frame.
+				if (currentFrame > endFrame) {
+					currentFrame = startFrame;
+				}
+			}
+			//console.log(currentFrame);
+			previousTime = currentTime;
+			//Sound TIMING
+			if (pSpeed >= 2) {
+				if (state == 1) {
+					step1.stop();
+					if (!carSound) {
+						car1Sfx.fadeIn(.1, 0);
+						carSound = true;
+					}
+					stepSound = false;
+				} else if (state == 0) {
+					car1Sfx.stop();
+					if (!stepSound) {
+						step1.play();
+						stepSound = true;
+					}
+					carSound = false;
+				}
+			} else if (pSpeed <2 && chars.length <1) {
+				step1.stop();
+				car1Sfx.stop();
+				carSound = false;
+				stepSound = false;
+			}
+			
+			
+			for(var i = 0; i < Buildings.length; ++i) {
+				//Buildings[i].update();
+				Buildings[i].draw(Player.x,Player.y);
+			}
+			for(var i = 0; i < Roads.length; ++i) {
+				Roads[i].update();
+				Roads[i].draw(Player.x,Player.y);
+			}
+			for(var i = 0; i < Intersections.length; ++i) {
+				//Intersections[i].update();
+				Intersections[i].draw(Player.x,Player.y);
+			}
+			for(var i = 0; i < Pickups.length; ++i) {
+				//Pickups[i].update();
+				Pickups[i].draw(Player.x,Player.y);
+			}
+			for(var i = 0; i < Agents.length; ++i) {
+				var agent = Agents[i];
+				agent.update();
+				agent.draw(Player.x, Player.y);
+			}
+			
+			context.save();
+			drawSplat();
+			drawCar();
+			Player.update();
+			Player.draw();
+			Guns.update();
+			Guns.draw();
+			updateCar();
+			updatePhone();
+			drawPhone();
+			drawHud(previousTime,currentTime,elapsedTime);
+			drawHud2();
+			
+			if (mission == 2) {
+				if (wpTargetX != -1) {
+					drawWP(Player.x, Player.y);
+					if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 100) {	
+						getNextWaypoint();
+					}
+				}
+			}
+			if (Player.health <= 0) {
+				gameState = 3;
+			}
+
+		}
+		if(gameState == 2) {
+			context.save();
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(imageLoader.images["title2"],0,0);
+			context.restore();
+		}		
+		if(gameState == 3) {
+			Howler.mute();
+			context.save();
+			context.fillStyle = "black";
+			context.globalAlpha = 0.5;
+			context.fillRect(0, 0, canvas.width, canvas.height)
+			context.fillStyle = "red";
+			context.globalAlpha = 1;
+			context.font = "75px Verdana";
+			context.fillText("GAME OVER",canvas.width/2 - 220, 200);
+			context.font = "25px Verdana";
+			context.fillText("Press 'F5' to restart game", canvas.width/2 - 150, 320);
+		}
+		window.requestAnimationFrame(tick);
+	})();
+}
+</script></body></html>
