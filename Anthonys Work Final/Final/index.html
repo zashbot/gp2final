@@ -568,7 +568,9 @@ Punk.prototype.update = function(SteeringForce) {
 	force.y = force.y*REFMULTI;
 	this.Body.ApplyImpulse(force, this.Body.GetWorldCenter());
 	var vel = this.Body.GetLinearVelocity();
-	this.orientation = Math.atan2(vel.y,vel.x);
+	if(Math.atan2(vel.y,vel.x) != 0) {
+		this.orientation = Math.atan2(vel.y,vel.x);
+	}
 	var thevec = this.Body.GetPosition();
 	this.x = thevec.x * SCALE;
 	this.y = thevec.y * SCALE;
@@ -638,7 +640,7 @@ Gun.prototype.update = function(SteeringForce) {
 			var result = new b2Vec2;
 			result.x = 20*Math.cos(theta);
 			result.y = 20*Math.sin(theta);
-			this.bullets.unshift(new Bullet(Player.x+10*Math.cos(theta),Player.y+10*Math.sin(theta),this.damage));
+			this.bullets.unshift(new Bullet(Player.x+12*Math.cos(theta),Player.y+12*Math.sin(theta),this.damage));
 			this.bullets[0].Body.ApplyImpulse(result, this.bullets[0].Body.GetWorldCenter());
 			shootSfx.play();
 			Player.canFire = false;
@@ -685,11 +687,17 @@ function tp(x,y,o) {
 Bullet.prototype.update = function(gun) {
 	//update
 	//console.log(state);
-		
+	if(this.trail.length < 5){this.trail.unshift(new tp(this.x,this.y,0));}
+	if(this.trail.length >= 4){this.trail.pop();}
+	
+	if(utils.getDistance(this.x,this.y,Player.x,Player.y) > 700){
+			world.DestroyBody(this.Body);
+			gun.bullets.splice(gun.bullets.indexOf(this),1);
+	}	
 	var bodily = this.Body.GetContactList();
 	if(bodily) {
 		do {
-			if(bodily.other.GetUserData()[0] === 2){ //if we are an enemy
+			if(bodily.other.GetUserData()[0] === 2){ //if theys are an enemy
 				if(bodily.contact.IsTouching()){//if we are actually touching the enemy
 					if (canPlaySplat) {
 						crushed = bodily.other.GetUserData()[1];
@@ -729,10 +737,13 @@ Bullet.prototype.update = function(gun) {
 	context.save();
 	context.translate(this.x-Player.x+canvas.width/2, this.y-Player.y+canvas.height/2);
 	context.beginPath();
-	context.fillStyle = "white";
-	context.arc(0,0,3,0,2*Math.PI);
-	context.fill();
+	context.strokeStyle = "white";
+	context.lineWidth = 3;
+	for(i=0; i < this.trail.length; i++){
+		context.lineTo(this.trail[i].x-this.x,this.trail[i].y-this.y);
+	}
 	context.closePath();
+	context.stroke();
 	context.restore();
 		
 }
