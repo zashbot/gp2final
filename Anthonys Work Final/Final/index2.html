@@ -201,7 +201,7 @@ function Hobo(x, y) {
 	this.orientation = 0;
 	this.carX = this.x;
 	this.carY = this.y;
-	this.health = 5;
+	this.health = 100;
 	//begin initialization of BOX2D object
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 5.0;
@@ -2074,7 +2074,7 @@ function initGame() {
 			context.drawImage(imageLoader.images["title"],0,0,canvas.width, canvas.height);
 			context.fillStyle = "white";
 			context.font = '30pt Calibri';
-			Player.health = 5;
+			Player.health = 100;
 		}
 		if (Agents.length < 30) {
 			spawner.initWorld();
