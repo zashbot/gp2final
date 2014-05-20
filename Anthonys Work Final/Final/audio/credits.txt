@@ -9,3 +9,5 @@ http://www.freesound.org/people/j1987/sounds/123019/ - car open
 http://www.freesound.org/people/Heigh-hoo/sounds/9876/ - car close
 http://www.freesound.org/people/toxicwafflezz/sounds/150839/ - Bullet impact
 http://www.freesound.org/people/LukeSharples/sounds/209181/ = ugh
+http://www.freesound.org/people/lth_stp/sounds/121299/ = city
+http://www.freesound.org/people/MultiMax2121/sounds/156869/ = siren
