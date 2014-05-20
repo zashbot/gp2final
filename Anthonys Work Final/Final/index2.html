@@ -198,9 +198,6 @@ function Hobo(x, y) {
 }
 
 var carOrientation = Player.orientation;
-
-var tileSizeW = 32;
-var tileSizeH = 96;
 	
 Hobo.prototype.draw = function() {
 	//draw hobo
@@ -227,14 +224,16 @@ Hobo.prototype.draw = function() {
 				
 				//context.drawImage(imageLoader.images["walksheet"], 0*tileSize, 0*tileSize, tileSize, tileSize, this.width-tileSize, this.height-tileSize, this.width, this.height);
 				
-				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				
+				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
+				
 				//console.log('Fast');
 				
 			} else {
 				frameTimeSeconds = 1 / 4;
-				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 				//console.log('Medium');
-				
 			}
 		}
 	}
@@ -260,7 +259,8 @@ var canPlaySplat = true;
 var splatDelayMS = 200;
 var canHurt = true;
 var hurtDelayMS = 200;
-
+var canCont = false;
+var canContDelayMS = 3000;
 
 var enterable = false;
 Hobo.prototype.update = function(name) {
@@ -521,25 +521,26 @@ Punk.prototype.draw = function(ox,oy) {
 	if (punkSpeed <= .25) {
 			frameTimeSeconds = 1 / 7;
 			if (this.type == 1) {
-				context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				context.drawImage(imageLoader.images["walksheet2"], 0, 64, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 			} else {
-				context.drawImage(imageLoader.images["walksheet3"], 0, 64, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				context.drawImage(imageLoader.images["walksheet3"], 0, 64, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 			}
 	} else {
 			if (punkSpeed >= 1) {
 				frameTimeSeconds = 1 / 7;
-				if (this.type == 1) {	
-					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+				if (this.type == 1) {
+					//context.drawImage(imageLoader.images["walksheet"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);				
+					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 				} else {
-					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 				}
 				
 			} else {
 				frameTimeSeconds = 1 / 4;
 				if (this.type == 1) {
-					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+					context.drawImage(imageLoader.images["walksheet2"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 				} else {
-					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameHeight, frameWidth, frameHeight, -16, -16, frameWidth, frameHeight);
+					context.drawImage(imageLoader.images["walksheet3"], 0, currentFrame * frameWidth, frameHeight, frameWidth, -16, -16, frameHeight, frameWidth);
 				}
 				
 			}
@@ -1421,6 +1422,17 @@ var waypoints = [new wp(4000,1400),
 				new wp(4000,2450)];
 
 //GET NEXT WAYPOINT
+function startWaypoint() {
+	console.log('startWp');
+	console.log('CP Start!');
+	laps = 1;
+	crush.play();
+	startTime = new Date();
+	getNextWaypoint();
+	//canCont = true;
+	canCont = false;
+}
+
 function getNextWaypoint() {
 	points++;
 	if (points >= waypoints.length) {
@@ -1429,8 +1441,9 @@ function getNextWaypoint() {
 		//cPoints++;
 	}
 	if (points == 1 && laps == 0) {
-			laps = 1;
-			startTime = new Date();
+			//laps = 1;
+			//crush.play();
+			//startTime = new Date();
 	}
 	wpTargetX = waypoints[points].x;
 	wpTargetY = waypoints[points].y;
@@ -1444,6 +1457,7 @@ function getNextWaypoint() {
 	}
 	checkP.play();
 	cPoints++;
+	
 	ScoreSecOld = scoreSec;
 	ScoreMinOld = scoreMin;
 	//console.log('ScoreSec: '+scoreSec+' ScoreMin: '+scoreMin);
@@ -1605,8 +1619,8 @@ var targetY2 = mouse.y;//waypoints[points].y;
 var checkRace = false;
  
 // image data
-var frameWidth = 96;
-var frameHeight = 32;
+var frameWidth = 32;
+var frameHeight = 96;
 
  // animation data
 var startFrame = 0;
@@ -1645,6 +1659,7 @@ function detectViewportChange(){
 
 cameraWidth = 192;
 cameraHeight = 192;
+
 var hudDisplay = false;
 var hudDisplayMS = 4000;
 var a;
@@ -1660,55 +1675,24 @@ function drawHud(p,c,e) {
 	context.drawImage(imageLoader.images["water"],64,canvas.height-256,192,192);
 	context.restore();
 	context.save();
-	
-	context.drawImage(imageLoader.images["map_full3"], Player.x*.05 - 96, Player.y*.05 - 96, cameraWidth, cameraHeight, 64, canvas.height-256, 192, 192);
-	
+	context.drawImage(imageLoader.images["map_full3"], Player.x*.05 - 96, Player.y*.05 - 96, cameraWidth, cameraHeight, 64, canvas.height-256, cameraWidth, cameraHeight);
 	context.drawImage(imageLoader.images["phone"], Player.x*.10 - 330, Player.y*.10 - 330, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
 	context.drawImage(imageLoader.images["phone"], Player.x*.10 - 820, Player.y*.10 - 825, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
 	
-	if (stars !=0) {
-		context.save();
-		context.fillStyle = b;
-		context.fillRect(60,canvas.height-260,199,199);
-		context.restore();
-	
-		if (currentFrame == 0) {
-			b = 'rgba(255,0,0,.25)';
-		} else {
-			b = 'rgba(0,0,255,.25)';
+	if (mission == 0) {
+		if (stars !=0) {
+			context.save();
+			context.fillStyle = b;
+			context.fillRect(60,canvas.height-260,199,199);
+			context.restore();
+		
+			if (currentFrame == 0) {
+				b = 'rgba(255,0,0,.25)';
+			} else {
+				b = 'rgba(0,0,255,.25)';
+			}
 		}
 	}
-	if (mission == 2) {
-		context.save();
-		context.translate(64,canvas.height-256);
-		context.moveTo((Player.x - wpTargetX)/.20,  (Player.y - wpTargetY)/.20);
-		drawCircle(wpTargetX,wpTargetY,8);
-		context.restore();
-	}
-	
-	/*
-	//context.translate(wpTargetX-ox+canvas.width/2, wpTargetY-oy+canvas.height/2);
-	if (mission == 2) {
-		//drawCircle(Player.x*.10 - 330, Player.y*.10 - 330, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
-		
-		//context.translate(wpTargetX-Player.x+canvas.width/2, wpTargetY-Player.y+canvas.height/2);
-		context.translate((wpTargetX*.2)-(Player.x*2)+((canvas.width/2)*.2), (wpTargetY*.2)-(Player.y*2)+((canvas.height/2)*.2));
-		context.drawImage(imageLoader.images["wp"],64,canvas.height-256);
-		
-		//context.drawImage(imageLoader.images["wp"], Player.x*.10 - wpTargetX*.145, Player.y*.10 - wpTargetY*.260, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
-		
-		//context.drawImage(imageLoader.images["wp"], Player.x*.1998798798798799 - wpTargetX*.2998798798798799, Player.y*.0250919540229885 - wpTargetY*.2000919540229885, cameraWidth*4, cameraHeight*4, 64, canvas.height-256, 192, 192);
-		
-		
-		//context.drawImage(imageLoader.images["wp"], Player.x*.1998798798798799 - wpTargetX2*.30, Player.y*.1998798798798799 - wpTargetY2*.235, cameraWidth*4, cameraHeight*4, 64, canvas.height-256, 192, 192);
-		
-		//context.drawImage(imageLoader.images["wp"], Player.x*.10 - wpTargetX2*.145, Player.y*.10 - wpTargetY2*.235, cameraWidth*2, cameraHeight*2, 64, canvas.height-256, 192, 192);
-		
-		//drawCircle(wpTargetX-Player.x+canvas.width/2, wpTargetY-Player.y+canvas.height/2);
-		//drawCircle(canvas.width/2, canvas.height/2, .5);
-		
-	}
-	*/
 	context.restore();
 	context.fillStyle = "black";
 	context.save();
@@ -1980,6 +1964,8 @@ function drawWP(ox,oy) {
 	context.restore();
 }
 
+
+
 function initGame() {
 	detectViewportChange();
 	window.addEventListener("keydown", onKeyDown, false);
@@ -2095,10 +2081,26 @@ function initGame() {
 			drawHud2();
 			
 			if (mission == 2) {
+				console.log(points + ' : ' + laps);
 				if (wpTargetX != -1) {
+					
 					drawWP(Player.x, Player.y);
-					if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 100) {	
-						getNextWaypoint();
+					if (points >= 0 && laps >= 1) {
+						if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 100) {	
+							getNextWaypoint();
+						}
+					} else {
+						if (utils.getDistance(wpTargetX, wpTargetY, Player.x, Player.y) < 100) {	
+							//console.log('touching circle');
+							if (!canCont) {
+								//console.log('if canCount = false');
+								//startWaypoint();
+								canCont = true;
+								
+								window.setTimeout(function() { startWaypoint(); }, canContDelayMS);
+							}
+							//console.log('!hitTest');
+						}
 					}
 				}
 			}
