@@ -21,9 +21,7 @@
 <canvas id="gameCanvas" style="z-index: 1;" width="1280" height="800"></canvas>
 </div>
 </center>
-<div id="mini">
-<canvas id="miniCanvas" style="z-index: 2;" width="100" height="100"></canvas>
-</div>
+
 <script src="./scripts/utils.js"></script>
 <script src="./scripts/imageLoader.js"></script>
 <script src="./scripts/box2d.js"></script>
@@ -40,6 +38,7 @@ imageLoader.queueImage("walksheet2");
 imageLoader.queueImage("walksheet3");
 imageLoader.queueImage("title");
 imageLoader.queueImage("title2");
+imageLoader.queueImage("title3");
 imageLoader.queueImage("splat");
 imageLoader.queueImage("kill");
 imageLoader.queueImage("impact");
@@ -73,13 +72,41 @@ var city = new Howl({urls: ["audio/city.mp3", "audio/city.mp3"], volume:0.1, loo
 var siren = new Howl({urls: ["audio/siren.wav", "audio/siren.mp3"], volume:0.1});
 imageLoader.loadQueuedImages(initGame);
 
+var resolutions = [];
+resolutions[0] = [1280, 800];
+resolutions[1] = [1280, 720];
+resolutions[2] = [1024, 800];
+resolutions[3] = [1024, 720];
+var canResW = resolutions[0][0];
+var  canResH = resolutions[0][0];
+var res = 0;
+
+function resCheck() {
+	if (res == 0) {
+		canvas.width = resolutions[0][0];
+		canvas.height = resolutions[0][1];
+	} else if (res == 1) {
+		canvas.width = resolutions[1][0];
+		canvas.height = resolutions[1][1];
+	} else if (res == 2) {
+		canvas.width = resolutions[2][0];
+		canvas.height = resolutions[2][1];
+	} else if (res == 3) {
+		canvas.width = resolutions[3][0];
+		canvas.height = resolutions[3][1];
+	}
+	
+	
+	/*for (var res = resolutions.length - 1; res >= 0; --res) {
+		canvas.width = resolutions[res[0]];
+		canvas.height = resolutions[res[1]];
+	}*/
+}
+
 var REFMULTI = 2; //1= 120hz 2 =60hz
 
 var canvas = document.getElementById("gameCanvas");
 var context = canvas.getContext("2d");
-
-var miniCanvas = document.getElementById("miniCanvas");
-var miniContext = miniCanvas.getContext("2d");
 
 var mouse = utils.captureMouse(canvas);
 
@@ -174,7 +201,7 @@ function Hobo(x, y) {
 	this.orientation = 0;
 	this.carX = this.x;
 	this.carY = this.y;
-	this.health = 100;
+	this.health = 5;
 	//begin initialization of BOX2D object
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 5.0;
@@ -292,6 +319,7 @@ Hobo.prototype.update = function(name) {
 								if (stars != 0) {	
 									if (canHurt) {	
 										Player.health-=5;
+										ugh.play();
 										canHurt = false;
 										window.setTimeout(function() { canHurt = true; }, hurtDelayMS);
 									}
@@ -947,6 +975,25 @@ function onKeyUp(e) {
 				wpTargetX2 = waypoints[(points+1)].x;
 				wpTargetY2 = waypoints[(points+1)].y;				
 			}
+			if (gameState == 3) {
+				Player.health = 100;
+				mission = 0;
+				cPoints = 0;
+				laps = 0;
+				score = 0;
+				stars = 0;
+				wpTimer = '';
+				wpTargetX = waypoints[points].x;
+				wpTargetY = waypoints[points].y;
+				wpTargetX2 = waypoints[(points+1)].x;
+				wpTargetY2 = waypoints[(points+1)].y;
+				muted = false;
+				Howler.unmute;
+				//step1.mute();
+				//phoneSfx.mute();
+				step1.stop();
+				gameState = 2;
+			}
           break;
 		case 27:      //Esc
 			if (gameState == 1) {
@@ -954,6 +1001,8 @@ function onKeyUp(e) {
 				Howler.mute();
 				paused = true;
 				pausedTime = startTime;
+				step1.mute();
+				phoneSfx.mute();
 				//pausedTime = seconds2;
 				//currTime = new Date();
 				//var endTime = new Date();
@@ -961,12 +1010,33 @@ function onKeyUp(e) {
 			} else  if (gameState == 2) {
 				gameState = 1;
 				Howler.unmute();
+				step1.unmute();
+				phoneSfx.unmute();
 				//seconds2 = pausedTime;
 				paused = false;
 				startTime = pausedTime;
 			}
+			if (gameState == 0) {
+				gameState = 4;
+			} else if (gameState == 4) {
+				gameState = 0;
+			}
+			
+			
           break;
 		case 49:      //#1
+			res +=1;
+			if (res > 3) {
+				res = 0;
+			}
+			
+			resCheck();
+			
+			/*if (canvas.width == 1024) {
+				canvas.width = 1280;
+			} else {
+				canvas.width = 1024;
+			}*/
           break;
 		case 50:      //#2
           break;		  
@@ -1816,7 +1886,7 @@ function drawHud(p,c,e) {
 			context.fillText("Time: " + '0:00', canvas.width/2-60, 32);
 			if (canCont == true) {
 				context.save();
-				context.font = "25px Verdana";
+				context.font = "35px Verdana";
 				context.fillText(wpTimer, canvas.width/2, 320);
 				context.restore();
 			}
@@ -1826,7 +1896,7 @@ function drawHud(p,c,e) {
 			scoreMin = minutes;
 			if (canCont == true) {
 				context.save();
-				context.font = "25px Verdana";
+				context.font = "35px Verdana";
 				context.fillText(wpTimer, canvas.width/2 - 10, 320);
 				context.restore();
 			}
@@ -2001,10 +2071,10 @@ function initGame() {
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		if(gameState == 0) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
-			context.drawImage(imageLoader.images["title"],0,0);
+			context.drawImage(imageLoader.images["title"],0,0,canvas.width, canvas.height);
 			context.fillStyle = "white";
 			context.font = '30pt Calibri';
-			Player.health = 100;
+			Player.health = 5;
 		}
 		if (Agents.length < 30) {
 			spawner.initWorld();
@@ -2012,7 +2082,6 @@ function initGame() {
 		if(gameState == 1) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			world.Step((1/60),10,10);
-			
 			//ANIMATION TIMING
 			var currentTime = Date.now();
 	
@@ -2125,24 +2194,24 @@ function initGame() {
 			}
 
 		}
-		if(gameState == 2) {
+		if(gameState == 2 || gameState == 4) {
 			context.save();
 			context.clearRect(0, 0, canvas.width, canvas.height);
-			context.drawImage(imageLoader.images["title2"],0,0);
+			context.drawImage(imageLoader.images["title2"],0,0,canvas.width, canvas.height);
 			context.restore();
 		}		
 		if(gameState == 3) {
-			Howler.mute();
+			//Howler.mute();
+			stars = 0;
+			music.mute();
+			music2.mute();
+			music3.mute();
+			step1.mute();
+			phoneSfx.mute();
 			context.save();
-			context.fillStyle = "black";
-			context.globalAlpha = 0.5;
-			context.fillRect(0, 0, canvas.width, canvas.height)
-			context.fillStyle = "red";
-			context.globalAlpha = 1;
-			context.font = "75px Verdana";
-			context.fillText("GAME OVER",canvas.width/2 - 220, 200);
-			context.font = "25px Verdana";
-			context.fillText("Press 'F5' to restart game", canvas.width/2 - 150, 320);
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(imageLoader.images["title3"],0,0,canvas.width, canvas.height);
+			context.restore();
 		}
 		window.requestAnimationFrame(tick);
 	})();
