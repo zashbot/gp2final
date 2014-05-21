@@ -310,6 +310,7 @@ Hobo.prototype.update = function(name) {
 									if (stars == 0) {
 										stars = 1;
 										siren.play();
+										getAway = false;
 									}
 								}
 							}
@@ -763,6 +764,7 @@ Bullet.prototype.update = function(gun) {
 							if (stars == 0) {
 								stars = 1;
 								siren.play();
+								getAway = false;
 							}
 						}
 					}
@@ -1003,16 +1005,11 @@ function onKeyUp(e) {
 				pausedTime = startTime;
 				step1.mute();
 				phoneSfx.mute();
-				//pausedTime = seconds2;
-				//currTime = new Date();
-				//var endTime = new Date();
-				//var endTime = currTime;
 			} else  if (gameState == 2) {
 				gameState = 1;
 				Howler.unmute();
 				step1.unmute();
 				phoneSfx.unmute();
-				//seconds2 = pausedTime;
 				paused = false;
 				startTime = pausedTime;
 			}
@@ -1029,14 +1026,7 @@ function onKeyUp(e) {
 			if (res > 3) {
 				res = 0;
 			}
-			
 			resCheck();
-			
-			/*if (canvas.width == 1024) {
-				canvas.width = 1280;
-			} else {
-				canvas.width = 1024;
-			}*/
           break;
 		case 50:      //#2
           break;		  
@@ -1493,15 +1483,11 @@ var cPoints = 0;
 var laps = 0;
 var startTime;
 var timerEnd = 60;
-var startTimer;
 var paused = false;
 var tickPause;
 var tickSec;
 var tickMin;
-var currTime;
 var pausedTime;
-var timeDiffPaused;
-var seconds2;
 
 //Waypoints Array			
 var waypoints = [new wp(4000,1400), 
@@ -1797,6 +1783,15 @@ function drawHud(p,c,e) {
 			} else {
 				b = 'rgba(0,0,255,.25)';
 			}
+		} else {
+			if (gotAway) {
+				//stars = 0;
+				context.save();
+				context.font = "35px Verdana";
+				context.fillText('You lost the Cops!', canvas.width/2, 320);
+				context.restore();
+				window.setTimeout(function() {gotAway = false; copChecker = false;}, 2000);
+			}
 		}
 	}
 	context.restore();
@@ -2055,6 +2050,23 @@ function drawWP(ox,oy) {
 	context.restore();
 }
 
+var getAwayTimer;
+var getAwayTimer2;
+
+var nearCop = false;
+var getAway = false;
+var gotAway = false;
+var copChecker = false;
+
+function copCheck() {
+	if (stars != 0) {
+		if (nearCop == false && getAway == true) {
+			copChecker = true;
+			window.setTimeout(function() { gotAway = true; stars = 0;}, 5000);
+		}
+	}
+}
+
 
 
 function initGame() {
@@ -2082,9 +2094,12 @@ function initGame() {
 		if(gameState == 1) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			world.Step((1/60),10,10);
+			
+
+			
 			//ANIMATION TIMING
 			var currentTime = Date.now();
-	
+			
 			// divide by 1000 to convert millseconds to seconds....
 			var elapsedTime = (currentTime - previousTime) / 1000;
 			
@@ -2192,7 +2207,31 @@ function initGame() {
 			if (Player.health <= 0) {
 				gameState = 3;
 			}
-
+			
+			if (stars != 0) {
+				for(var i = 0; i < Agents.length; ++i) {
+					if (Agents[i].type == 2) {
+						var cop = Agents[i];
+							if (utils.getDistance(cop.x, cop.y, Player.x, Player.y) >= 500) {
+								nearCop = false;
+								getAway = true;
+								if (!copChecker) {
+									copCheck();
+									copChecker = true;
+								}
+							} else if (utils.getDistance(cop.x, cop.y, Player.x, Player.y) < 500) {
+								nearCop = true;
+								getAway = false;
+								copChecker = false;
+							}
+					}
+				}
+			}
+			context.save();
+			context.font = "35px Verdana";
+			context.fillText('Near Cop?: ' + nearCop, canvas.width/2, 32);
+			context.fillText('Get Away?: ' + getAway, canvas.width/2, 64);
+			context.restore();
 		}
 		if(gameState == 2 || gameState == 4) {
 			context.save();
